@@ -20,9 +20,10 @@
       generate
             genvar i;
             for (i = 0; i < NB_COL; i = i+1) begin
-            always @(posedge clk) begin 
-               if (valid_st && we[i]) 
-                  RAM[addr][(i+1)*COL_WIDTH-1:i*COL_WIDTH] <= din[(i+1)*COL_WIDTH-1:i*COL_WIDTH];
+               always @(posedge clk) begin 
+                  if (valid_st && we[i]) begin
+                     RAM[addr][(i+1)*COL_WIDTH-1:i*COL_WIDTH] <= din[(i+1)*COL_WIDTH-1:i*COL_WIDTH];
+                  end
                end
             end
       endgenerate        
