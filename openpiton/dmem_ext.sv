@@ -11,7 +11,7 @@
       
       always @(posedge clk) begin
          if(spec_ld) begin
-            outputreg <= RAM[addr];
+            outputreg = RAM[addr];
          end
       end
 
