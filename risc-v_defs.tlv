@@ -29,7 +29,7 @@ m4+definitions(['
                         ['['assign $$is_']m4_translit(['$1'], ['A-Z'], ['a-z'])['_type = INSTR_TYPE_$1_MASK[$raw_op5]; ']m4_types_decode(m4_shift($@))'])'])
   // Instantiated for each op5 in \SV_plus context.
   m4_define(['m4_op5'],
-            ['m4_define(['M4_OP5_$1_TYPE'], $2)['localparam [4:0] OP5_$3 = 5'b$1;']m4_define(['m4_instr_type_$2_mask_expr'], m4_quote(m4_instr_type_$2_mask_expr)[' | (1 << 5'b$1)'])'])
+            ['m4_define(['M4_OP5_$1_TYPE'], $2)m4_ifdef(['m4_no_op5_localparams'], [''], ['['localparam [4:0] OP5_$3 = 5'b$1;']'])m4_define(['m4_instr_type_$2_mask_expr'], m4_quote(m4_instr_type_$2_mask_expr)[' | (1 << 5'b$1)'])'])
 
 
   // --------------------------------
@@ -64,7 +64,10 @@ m4+definitions(['
                    m4_ifelse(M4_OP5_$4_TYPE, m4_ifdef(['m4_instr_type_of_$1'], ['m4_instr_type_of_$1'], ['$1']), [''],
                              ['m4_errprint(['Instruction ']m4_argn($#, $@)[''s type ($1) is inconsistant with its op5 code ($4) of type ']M4_OP5_$4_TYPE[' on line ']m4___line__[' of file ']m4_FILE.m4_new_line)'])
                    // if instrs extension is supported and instr is for the right machine width, "
-                   m4_ifelse(m4_instr_supported($@), 1, ['m4_show(['localparam [6:0] ']']m4_argn($#, $@)['['_INSTR_OPCODE = 7'b$4['']11;m4_instr$1(m4_shift($@))'])'],
+                   m4_ifelse(m4_instr_supported($@), 1,
+                             ['m4_ifdef(['m4_no_opcode_localparams'], [''],
+                                        ['m4_show(['localparam [6:0] ']']m4_argn($#, $@)['['_INSTR_OPCODE = 7'b$4['']11;'])'])m4_instr$1(m4_shift($@))
+                             '],
                              [''])'])
 
 
