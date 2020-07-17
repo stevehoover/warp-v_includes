@@ -2,7 +2,6 @@
 \SV
 
 m4+definitions(['
-  m4_ifelse(M4_ISA, ['RISCV'], ['
   // Instruction field values for each instruction are defined as localparams and as M4 defines. Assembly uses one or the other
   // depending on m4_use_localparams.
   // Define localparam and M4_ define.
@@ -217,7 +216,6 @@ m4+definitions(['
   m4_define(['m4_asm'], ['m4_define(['m4_instr']M4_NUM_INSTRS, ['m4_asm_$1(m4_shift($@))'])['/']['/ Inst #']M4_NUM_INSTRS: $@m4_define(['M4_NUM_INSTRS'], m4_eval(M4_NUM_INSTRS + 1))'])
 
   //=========
-  '])
 '])
 // M4-generated code.
 \TLV riscv_gen()
