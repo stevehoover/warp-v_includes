@@ -6,7 +6,7 @@
       output  [NB_COL*COL_WIDTH-1:0]  dout
    );
       
-      reg [NB_COL*COL_WIDTH-1:0] outputreg;   
+      //reg [NB_COL*COL_WIDTH-1:0] outputreg;   
       reg	[NB_COL*COL_WIDTH-1:0] RAM [SIZE-1:0];
       
       // always @(posedge clk) begin
@@ -15,16 +15,17 @@
       //    end
       // end
 
-      assign dout = outputreg;
+      assign dout = spec_ld ? RAM[addr] : 'x;
 
       generate
             genvar i;
             for (i = 0; i < NB_COL; i = i+1) begin
                always @(posedge clk) begin
-                  if (spec_ld) begin
-                     outputreg[(i+1)*COL_WIDTH-1:i*COL_WIDTH] <= RAM[addr][(i+1)*COL_WIDTH-1:i*COL_WIDTH];
-                  end 
-                  else if (valid_st && we[i]) begin
+                  //if (spec_ld) begin
+                  //   outputreg[(i+1)*COL_WIDTH-1:i*COL_WIDTH] <= RAM[addr][(i+1)*COL_WIDTH-1:i*COL_WIDTH];
+                  //end 
+                  //else 
+                  if (valid_st && we[i]) begin
                      RAM[addr][(i+1)*COL_WIDTH-1:i*COL_WIDTH] <= din[(i+1)*COL_WIDTH-1:i*COL_WIDTH];
                   end
                end
