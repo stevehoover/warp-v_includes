@@ -9,13 +9,9 @@
       //reg [NB_COL*COL_WIDTH-1:0] outputreg;   
       reg	[NB_COL*COL_WIDTH-1:0] RAM [SIZE-1:0];
       
-      // always @(posedge clk) begin
-      //    if(spec_ld) begin
-      //       outputreg <= RAM[addr];
-      //    end
-      // end
 
       assign dout = spec_ld ? RAM[addr] : 'x;
+      // TODO : yosys logic equivalence check - with the other module
 
       generate
             genvar i;
