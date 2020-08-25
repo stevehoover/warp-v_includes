@@ -34,11 +34,18 @@
    
 // 3) popcnt (count no. of '1' in the input)
 // e.g. m4+popcnt(|pipe, /pop_stage, $input, $output, 32)
+\TLV redux_synth($_redux_sig,/_hier,#_MAX,#_MIN,$_sig,$_init_expr ,_op)
+   integer i;
+   \always_comb
+      $['']$_redux_sig = $_init_expr ;
+      for (i = #_MIN; i <= #_MAX; i = i + 1) begin
+         $_redux_sig = $_redux_sig _op /_hier[i]$_sig;
+      end
 \TLV popcnt(/_top, /_pop_bit, $_input, $_output, #_XLEN)
    m4_pushdef(['m4_pop_bit'], m4_strip_prefix(/_pop_bit))
    /_pop_bit[['']#_XLEN -1 : 0]
       $pop_temp[#_XLEN -1 : 0] = { {(#_XLEN - 1){1'b0}} ,/_top$_input[#m4_pop_bit]};
-   m4+redux($_output[\$clog2(#_XLEN) : 0], /_pop_bit, m4_eval(#_XLEN - 1) , 0, $pop_temp, '0, +)
+   m4+redux_synth($_output[\$clog2(#_XLEN) : 0], /_pop_bit, m4_eval(#_XLEN - 1) , 0, $pop_temp, '0, +)
    m4_popdef(['m4_pop_bit'])
    
 // 4) Logic-with-negate instructions (andn, orn, xnor)
@@ -260,11 +267,10 @@
 /* verilator lint_off CMPCONST */
 /* verilator lint_off WIDTH */
 /* verilator lint_off PINMISSING */
-m4_include_lib(['https://raw.githubusercontent.com/stevehoover/tlv_lib/481188115b4338567df916460d462ca82401e211/fundamentals_lib.tlv'])
 m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/verilog/rvb_bextdep/rvb_bextdep.v'])
 m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/verilog/rvb_shifter/rvb_shifter.v'])
 m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/verilog/rvb_clmul/rvb_clmul.v'])
 m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/verilog/rvb_crc/rvb_crc.v'])
-m4_sv_include_url(['https://raw.githubusercontent.com/vineetjain07/riscv-bitmanip/master/verilog/rvb_bitcnt/rvb_bitcnt.v'])
+m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/verilog/rvb_bitcnt/rvb_bitcnt.v'])
 /* verilator lint_on CMPCONST */   
 /* verilator lint_off WIDTH */   
