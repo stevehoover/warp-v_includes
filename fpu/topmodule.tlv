@@ -39,7 +39,7 @@ m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_include
 m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/master/fpu/hardfloat_verilog/HardFloat_rawFN.v'])             
 m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/master/fpu/hardfloat_verilog/HardFloat_specialize.v'])
 m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/master/fpu/hardfloat_verilog/HardFloat_specialize.vi'])                   
-m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/master/fpu/hardfloat_verilogaddRecFN.v'])                  
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/master/fpu/hardfloat_verilog/addRecFN.v'])                  
 m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/master/fpu/hardfloat_verilog/compareRecFN.v'])                  
 m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/master/fpu/hardfloat_verilog/divSqrtRecFN_small.v'])                  
 m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/master/fpu/hardfloat_verilog/fNToRecFN.v'])                  
