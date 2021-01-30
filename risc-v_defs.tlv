@@ -152,12 +152,13 @@ m4+definitions(['
   //   m4_instr(R2, 32, A, 01011, 010, 00010, 00000, LR.W)  // (5 bits for funct7 for all "A"-ext instrs)
   //   m4_instr(R, 32, A, 01011, 010, 00011, SC.W)          //   "
   // This defines assembler macros as follows. Fields are ordered rd, rs1, rs2, imm:
-  //   I: m4_asm_ADDI(r4, r1, 0),
-  //   R: m4_asm_ADD(r4, r1, r2),
+  //   I:  m4_asm_ADDI(r4, r1, 0),
+  //   R:  m4_asm_ADD(r4, r1, r2),
   //   R2: m4_asm_FSQRT.S(r4, r1, 000),  // rm == 000
   //   R4: m4_asm_FMADD.S(r4, r1, r2, r3, 000),  // rm == 000
-  //   S: m4_asm_SW(r1, r2, 100),  // Store r13 into [r10] + 4
-  //   B: m4_asm_BLT(r1, r2, 1000), // Branch if r1 < r2 to PC + 13'b1000 (where lsb = 0)
+  //   S:  m4_asm_SW(r1, r2, 100),  // Store r13 into [r10] + 4
+  //   J:  m4_asm(JAL, r7, 00000000000000000010),  // Jump to next instr. Up to 20-bit signed immediate plus implicit 0 bit (unlike JALR) provides byte address (last immediate bit should also be 0)
+  //   B:  m4_asm_BLT(r1, r2, 1000), // Branch if r1 < r2 to PC + 13'b1000 (where lsb = 0)
   //   For "A"-extension instructions, an additional final arg is REQUIRED to provide 2 binary bits for aq and rl.
   // Macro definitions include 2 parts:
   //   o Hardware definitions: m4_instr_<mnemonic>($@)
