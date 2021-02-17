@@ -205,7 +205,7 @@ m4+definitions(['
   // E.g. m4_asm_imm_field(101011, 17, 7, 3) => 5'b00101
   m4_define(['m4_asm_imm_field'], ['m4_eval($3 - $4 + 1)'b['']m4_substr(m4_asm_zero_ext($1, $2), m4_eval($2 - $3 - 1), m4_eval($3 - $4 + 1))'])
   // Register operand.
-  m4_define(['m4_asm_reg'], ['m4_ifelse(m4_substr(['$1'], 0, 1), ['r'], [''], ['m4_errprint(['$1 passed to register field.'])'])5'd['']m4_substr(['$1'], 1)'])
+  m4_define(['m4_asm_reg'], ['m4_ifelse(m4_substr(['$1'], 0, 1), ['r'], [''], ['m4_ifelse(m4_substr(['$1'], 0, 1), ['x'], [''], ['m4_errprint(['$1 passed to register field.'])'])'])5'd['']m4_substr(['$1'], 1)'])
 
   // For debug, a string for an asm instruction.
   m4_define(['m4_asm_mem_expr'], [''])
