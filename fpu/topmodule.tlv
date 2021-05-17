@@ -31,6 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 // Include BaseJump STL FIFO files.
+/* verilator lint_save */
 /* verilator lint_off CMPCONST */
 /* verilator lint_off WIDTH */
 m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/master/fpu/hardfloat_verilog/HardFloat_consts.vi'])
@@ -50,7 +51,7 @@ m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_include
 m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/master/fpu/hardfloat_verilog/recFNToFN.v'])   
 m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/master/fpu/hardfloat_verilog/recFNToIN.v'])                    
 m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/master/fpu/hardfloat_verilog/recFNToRecFN.v'])                                     
-/* verilator lint_on CMPCONST */
+/* verilator lint_restore */
 
 \TLV fpu_define(#_expwidth, #_sigwidth, #_intwidth)
     m4_define(['EXPWIDTH'], #_expwidth)
