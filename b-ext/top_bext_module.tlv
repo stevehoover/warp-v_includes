@@ -264,6 +264,7 @@
 
 \SV
 // Include verilog and tlv files.
+/* verilator lint_save */
 /* verilator lint_off CMPCONST */
 /* verilator lint_off WIDTH */
 /* verilator lint_off PINMISSING */
@@ -272,5 +273,4 @@ m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/maste
 m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/verilog/rvb_clmul/rvb_clmul.v'])
 m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/verilog/rvb_crc/rvb_crc.v'])
 m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/verilog/rvb_bitcnt/rvb_bitcnt.v'])
-/* verilator lint_on CMPCONST */   
-/* verilator lint_off WIDTH */   
+/* verilator lint_restore */
