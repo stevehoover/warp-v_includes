@@ -35,10 +35,9 @@
 // 3) popcnt (count no. of '1' in the input)
 // e.g. m4+popcnt(|pipe, /pop_stage, $input, $output, 32)
 \TLV redux_synth($_redux_sig,/_hier,#_MAX,#_MIN,$_sig,$_init_expr ,_op)
-   integer i;
    \always_comb
       $['']$_redux_sig = $_init_expr ;
-      for (i = #_MIN; i <= #_MAX; i = i + 1) begin
+      for (integer i = #_MIN; i <= #_MAX; i = i + 1) begin
          $_redux_sig = $_redux_sig _op /_hier[i]$_sig;
       end
 \TLV popcnt(/_top, /_pop_bit, $_input, $_output, #_XLEN)
@@ -138,11 +137,10 @@
    
 // 26) ROTL (rotate left)
 // e.g. m4+rorl_final(32, 1, $input, $sftamt, $output, 31, 0)
-\TLV rorl_final(#_varbits,#_stage,$_reg_value,$_sft_amt,$_rotl,#_max,#_min) 
-   integer i;
+\TLV rorl_final(#_varbits,#_stage,$_reg_value,$_sft_amt,$_rotl,#_max,#_min)
    \always_comb
       $['']$_rotl['']#_stage[#_max : #_min] = 0;
-      for (i = #_min; i <= #_max; i++)
+      for (integer i = #_min; i <= #_max; i++)
       begin
          $_rotl['']#_stage[i] = ($_sft_amt[#_stage - 1] == 0) ?
               $_reg_value[i] : (i >= 0 && i < (2**(#_stage - 1))) ?
@@ -157,10 +155,9 @@
 // 27) ROTR (rotate right)
 // e.g. m4+rorr_final(32, 1, $input, $sftamt, $output, 31, 0)
 \TLV rorr_final(#_varbits,#_stage,$_reg_value,$_sft_amt,$_rotr,#_max,#_min) 
-   integer i;
    \always_comb
       $['']$_rotr['']#_stage[#_max : #_min] = 0;
-      for (i = #_min; i <= #_max; i++)
+      for (integer i = #_min; i <= #_max; i++)
       begin
          $_rotr['']#_stage[i] = ($_sft_amt[#_stage - 1] == 0) ?
               $_reg_value[i] : (i <= (#_max) && i > (#_max - (2**(#_stage - 1)))) ?
