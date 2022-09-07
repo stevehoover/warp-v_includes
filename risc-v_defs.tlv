@@ -173,23 +173,23 @@ m4+definitions(['
   //   o Hardware definitions: m4_instr_<mnemonic>($@)
   //   o Assembler definition of m4_asm_<MNEMONIC>: m4_define(['m4_asm_<MNEMONIC>'], ['m4_asm_instr_str(...)'])
   m4_def(instrI, ['m4_instr_funct3($@)m4_define(['m4_asm_$5'],
-         ['m4_asm_instr_str(I, ['$5'], $']['@){12'b']m4_arg(3)[', m4_asm_reg(']m4_arg(2)['), m4_localparam_value(['$5_INSTR_FUNCT3']), m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($5_INSTR_OPCODE)['}'])'])
+         ['m4_asm_instr_str(I, ['$5'], $']['@)']m4_open_quote['{12'b']m4_arg(3)[', m4_asm_reg(']m4_arg(2)['), m4_localparam_value(['$5_INSTR_FUNCT3']), m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($5_INSTR_OPCODE)['}']m4_close_quote)'])
   m4_def(instrIf, ['m4_instr_funct7($@, ['$6'], m4_len($5))m4_define(['m4_asm_$6'],
-         ['m4_asm_instr_str(I, ['$6'], $']['@){m4_localparam_value(['$6_INSTR_FUNCT']m4_len($5))[', ']m4_eval(12-m4_len($5))'b']m4_arg(3)[', m4_asm_reg(']m4_arg(2)['), m4_localparam_value(['$6_INSTR_FUNCT3']), m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($6_INSTR_OPCODE)['}'])'])
+         ['m4_asm_instr_str(I, ['$6'], $']['@)']m4_open_quote['{m4_localparam_value(['$6_INSTR_FUNCT']m4_len($5))[', ']m4_eval(12-m4_len($5))'b']m4_arg(3)[', m4_asm_reg(']m4_arg(2)['), m4_localparam_value(['$6_INSTR_FUNCT3']), m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($6_INSTR_OPCODE)['}']m4_close_quote)'])
   m4_def(instrR, ['m4_instr_funct7($@, ['$6'], m4_ifelse($2, ['A'], 5, 7))m4_define(['m4_asm_$6'],
-         ['m4_asm_instr_str(R, ['$6'], $']['@){m4_ifelse($2, ['A'], ['m4_localparam_value(['$6_INSTR_FUNCT5']), ']']m4_arg(2)['[''], m4_localparam_value(['$6_INSTR_FUNCT7'])), m4_asm_reg(']m4_arg(3)['), m4_asm_reg(']m4_arg(2)['), ']m4_asm_funct3(['$6'], ['$4'])[', m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($6_INSTR_OPCODE)['}'])'])
+         ['m4_asm_instr_str(R, ['$6'], $']['@)']m4_open_quote['{m4_ifelse($2, ['A'], ['m4_localparam_value(['$6_INSTR_FUNCT5']), ']']m4_arg(2)['[''], m4_localparam_value(['$6_INSTR_FUNCT7'])), m4_asm_reg(']m4_arg(3)['), m4_asm_reg(']m4_arg(2)['), ']m4_asm_funct3(['$6'], ['$4'])[', m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($6_INSTR_OPCODE)['}']m4_close_quote)'])
   m4_def(instrR2, ['m4_instr_funct7($@, 7, ['$6'])m4_define(['m4_asm_$7'],
-         ['m4_asm_instr_str(R, ['$7'], $']['@){m4_ifelse($2, ['A'], ['m4_localparam_value(['$7_INSTR_FUNCT5']), ']']m4_arg(2)['[''], m4_localparam_value(['$7_INSTR_FUNCT7'])), 5'b$6, m4_asm_reg(']m4_arg(2)['), ']m4_asm_funct3(['$7'], ['$4'])[', m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($7_INSTR_OPCODE)['}'])'])
+         ['m4_asm_instr_str(R, ['$7'], $']['@)']m4_open_quote['{m4_ifelse($2, ['A'], ['m4_localparam_value(['$7_INSTR_FUNCT5']), ']']m4_arg(2)['[''], m4_localparam_value(['$7_INSTR_FUNCT7'])), 5'b$6, m4_asm_reg(']m4_arg(2)['), ']m4_asm_funct3(['$7'], ['$4'])[', m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($7_INSTR_OPCODE)['}']m4_close_quote)'])
   m4_def(instrR4, ['m4_instr_funct2($@)m4_define(['m4_asm_$6'],
-         ['m4_asm_instr_str(R, ['$6'], $']['@){m4_asm_reg(']m4_arg(4)['), m4_localparam_value(['$6_INSTR_FUNCT2']), m4_asm_reg(']m4_arg(3)['), m4_asm_reg(']m4_arg(2)['), ']m4_asm_funct3(['$6'], ['$4'])[', m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($6_INSTR_OPCODE)['}'])'])
+         ['m4_asm_instr_str(R, ['$6'], $']['@)']m4_open_quote['{m4_asm_reg(']m4_arg(4)['), m4_localparam_value(['$6_INSTR_FUNCT2']), m4_asm_reg(']m4_arg(3)['), m4_asm_reg(']m4_arg(2)['), ']m4_asm_funct3(['$6'], ['$4'])[', m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($6_INSTR_OPCODE)['}']m4_close_quote)'])
   m4_def(instrS, ['m4_instr_funct3($@, ['no_dest'])m4_define(['m4_asm_$5'],
-         ['m4_asm_instr_str(S, ['$5'], $']['@){m4_asm_imm_field(']m4_arg(3)[', 12, 11, 5), m4_asm_reg(']m4_arg(2)['), m4_asm_reg(']m4_arg(1)['), ']m4_asm_funct3(['$5'], ['$4'])[', m4_asm_imm_field(']m4_arg(3)[', 12, 4, 0), ']m4_localparam_value($5_INSTR_OPCODE)['}'])'])
+         ['m4_asm_instr_str(S, ['$5'], $']['@)']m4_open_quote['{m4_asm_imm_field(']m4_arg(3)[', 12, 11, 5), m4_asm_reg(']m4_arg(2)['), m4_asm_reg(']m4_arg(1)['), ']m4_asm_funct3(['$5'], ['$4'])[', m4_asm_imm_field(']m4_arg(3)[', 12, 4, 0), ']m4_localparam_value($5_INSTR_OPCODE)['}']m4_close_quote)'])
   m4_def(instrB, ['m4_instr_funct3($@, ['no_dest'])m4_define(['m4_asm_$5'],
-         ['m4_asm_instr_str(B, ['$5'], $']['@){m4_asm_imm_field(']m4_arg(3)[', 13, 12, 12), m4_asm_imm_field(']m4_arg(3)[', 13, 10, 5), m4_asm_reg(']m4_arg(2)['), m4_asm_reg(']m4_arg(1)['), ']m4_asm_funct3(['$5'], ['$4'])[', m4_asm_imm_field(']m4_arg(3)[', 13, 4, 1), m4_asm_imm_field(']m4_arg(3)[', 13, 11, 11), ']m4_localparam_value($5_INSTR_OPCODE)['}'])'])
+         ['m4_asm_instr_str(B, ['$5'], $']['@)']m4_open_quote['{m4_asm_imm_field(']m4_arg(3)[', 13, 12, 12), m4_asm_imm_field(']m4_arg(3)[', 13, 10, 5), m4_asm_reg(']m4_arg(2)['), m4_asm_reg(']m4_arg(1)['), ']m4_asm_funct3(['$5'], ['$4'])[', m4_asm_imm_field(']m4_arg(3)[', 13, 4, 1), m4_asm_imm_field(']m4_arg(3)[', 13, 11, 11), ']m4_localparam_value($5_INSTR_OPCODE)['}']m4_close_quote)'])
   m4_def(instrU, ['m4_instr_no_func($@)m4_define(['m4_asm_$4'],
-         ['m4_asm_instr_str(U, ['$4'], $']['@){m4_asm_imm_field(']m4_arg(2)[', 20, 19, 0), m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($4_INSTR_OPCODE)['}'])'])
+         ['m4_asm_instr_str(U, ['$4'], $']['@)']m4_open_quote['{m4_asm_imm_field(']m4_arg(2)[', 20, 19, 0), m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($4_INSTR_OPCODE)['}']m4_close_quote)'])
   m4_def(instrJ, ['m4_instr_no_func($@)m4_define(['m4_asm_$4'],
-         ['m4_asm_instr_str(J, ['$4'], $']['@){m4_asm_imm_field(']m4_arg(2)[', 20, 19, 19), m4_asm_imm_field(']m4_arg(2)[', 20, 9, 0), m4_asm_imm_field(']m4_arg(2)[', 20, 10, 10), m4_asm_imm_field(']m4_arg(2)[', 20, 18, 11), m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($4_INSTR_OPCODE)['}'])'])
+         ['m4_asm_instr_str(J, ['$4'], $']['@)']m4_open_quote['{m4_asm_imm_field(']m4_arg(2)[', 20, 19, 19), m4_asm_imm_field(']m4_arg(2)[', 20, 9, 0), m4_asm_imm_field(']m4_arg(2)[', 20, 10, 10), m4_asm_imm_field(']m4_arg(2)[', 20, 18, 11), m4_asm_reg(']m4_arg(1)['), ']m4_localparam_value($4_INSTR_OPCODE)['}']m4_close_quote)'])
   m4_def(instr_, ['m4_instr_no_func($@)'])
 
   // For each instruction type.
@@ -217,14 +217,13 @@ m4+definitions(['
   m4_def(asm_reg, ['m4_ifelse(m4_substr(['$1'], 0, 1), ['r'], [''], ['m4_ifelse(m4_substr(['$1'], 0, 1), ['x'], [''], ['m4_errprint(['$1 passed to register field.'])'])'])5'd['']m4_substr(['$1'], 1)'])
 
   // For debug, a string for an asm instruction.
-  m4_def(asm_mem_expr, [''])
-  // m4_asm_instr_str(<type>, <mnemonic>, <m4_asm-args>)
-  m4_def(asm_instr_str, ['m4_pushdef(['m4_str'], ['($1) $2 m4_shift(m4_shift($@))'])m4_define(['m4_asm_mem_expr'],
-                                                   m4_dquote(m4_asm_mem_expr[' "']m4_str['']m4_substr(['                                        '], m4_len(m4_quote(m4_str)))['", ']))m4_popdef(['m4_str'])'])
+  m4_def(asm_instr_str, ['m4_with(str, ['['($1) $2 ']']m4_dquote(m4_shift(m4_shift($@))),
+                                  ['m4_def(['instr_str']M4_NUM_INSTRS,
+                                           m4_dquote(m4_str['']m4_substr(['                                        '], m4_len(m4_quote(m4_str)))))'])'])
   // Assemble an instruction.
   // m4_asm(FOO, ...) defines m4_inst# as m4_asm_FOO(...), counts instructions in M4_NUM_INSTRS ,and outputs a comment.
   m4_def(NUM_INSTRS, 0)
-  m4_def(asm, ['m4_def(['instr']M4_NUM_INSTRS, ['m4_asm_$1(m4_shift($@))'])['/']['/ Inst #']M4_NUM_INSTRS: $@m4_define(['M4_NUM_INSTRS'], m4_eval(M4_NUM_INSTRS + 1))'])
+  m4_def(asm, ['m4_def(['instr']M4_NUM_INSTRS, m4_asm_$1(m4_shift($@)))['/']['/ Inst #']M4_NUM_INSTRS: $@m4_define(['M4_NUM_INSTRS'], m4_eval(M4_NUM_INSTRS + 1))'])
 
   //=========
 '])
