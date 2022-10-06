@@ -235,7 +235,6 @@ m4+definitions(['
      m4_output(['m4_instr_no_func($@)'])
      m4_func(['asm_']m4_mnemonic, $dest, $target, =funct3, =mnemonic, ['
         m4_def(imm, m4_asm_target(21))
-        m4_errprint(m4_nl['J imm: ']m4_imm) 
         m4_asm_instr_str(J, m4_mnemonic, m4_func_args)
         m4_out(['['{']m4_asm_imm_field(m4_imm, 21, 20, 20)[', ']m4_asm_imm_field(m4_imm, 21, 10, 1)[', ']m4_asm_imm_field(m4_imm, 21, 11, 11)[', ']m4_asm_imm_field(m4_imm, 21, 19, 12)[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}']'])
      '])
