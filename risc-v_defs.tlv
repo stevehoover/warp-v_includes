@@ -178,42 +178,42 @@ m4+definitions(['
      m4_output(['m4_instr_funct3($@)'])
      m4_func(['asm_']m4_mnemonic, $dest, $src1, $imm, =funct3, =mnemonic, ['
         m4_asm_instr_str(I, m4_mnemonic, m4_func_args)
-        m4_out(['['{12'b']m4_imm[', ']m4_asm_reg(m4_src1)[', ']m4_localparam_value(m4_mnemonic['_INSTR_FUNCT3'])[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['}'])
+        m4_output(['['{12'b']m4_imm[', ']m4_asm_reg(m4_src1)[', ']m4_localparam_value(m4_mnemonic['_INSTR_FUNCT3'])[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['}'])
      '])
   '])
   m4_func(instrIf, $width, $type, $op5, $funct3, $imm_funct, $mnemonic, ['
      m4_output(['m4_instr_funct7($@, m4_mnemonic, m4_len(m4_imm_funct))'])
      m4_func(['asm_']m4_mnemonic, $dest, $src1, $imm, =funct3, =imm_funct, =mnemonic, ['
         m4_asm_instr_str(I, m4_mnemonic, m4_func_args)
-        m4_out(['['{']m4_localparam_value(m4_mnemonic['_INSTR_FUNCT']m4_len(m4_imm_funct))[', ']m4_eval(12-m4_len(m4_imm_funct))[''b']m4_imm[', ']m4_asm_reg(m4_src1)[', ']m4_localparam_value(m4_mnemonic['_INSTR_FUNCT3'])[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['}'])
+        m4_output(['['{']m4_localparam_value(m4_mnemonic['_INSTR_FUNCT']m4_len(m4_imm_funct))[', ']m4_eval(12-m4_len(m4_imm_funct))[''b']m4_imm[', ']m4_asm_reg(m4_src1)[', ']m4_localparam_value(m4_mnemonic['_INSTR_FUNCT3'])[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['}'])
      '])
   '])
   m4_func(instrR, $width, $type, $op5, $funct3, $imm_funct, $mnemonic, ['
      m4_output(['m4_instr_funct7($@, m4_mnemonic, m4_ifelse(m4_type, ['A'], 5, 7))'])
      m4_func(['asm_']m4_mnemonic, $dest, $src1, $src2, $rm, =type, =funct3, =mnemonic, ['
         m4_asm_instr_str(R, m4_mnemonic, m4_func_args)
-        m4_out(['['{']m4_ifelse(m4_type, ['A'], ['m4_localparam_value(m4_mnemonic['_INSTR_FUNCT5'])[', ']m4_src1'], m4_localparam_value(m4_mnemonic['_INSTR_FUNCT7']))[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}']'])
+        m4_output(['['{']m4_ifelse(m4_type, ['A'], ['m4_localparam_value(m4_mnemonic['_INSTR_FUNCT5'])[', ']m4_src1'], m4_localparam_value(m4_mnemonic['_INSTR_FUNCT7']))[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}']'])
      '])
   '])
   m4_func(instrR2, $width, $type, $op5, $funct3, $imm_funct, $fixed_src2, $mnemonic, ['
      m4_output(['m4_instr_funct7($@, 7, m4_fixed_src2)'])
      m4_func(['asm_']m4_mnemonic, $dest, $src1, $rm, =type, =funct3, =fixed_src2, =mnemonic, ['
         m4_asm_instr_str(R, m4_mnemonic, m4_func_args)
-        m4_out(['['{']m4_ifelse(m4_type, ['A'], ['m4_localparam_value(m4_mnemonic['_INSTR_FUNCT5'])[', ']m4_src1'], m4_localparam_value(m4_mnemonic['_INSTR_FUNCT7']))[', 5'b']m4_fixed_src2[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}']'])
+        m4_output(['['{']m4_ifelse(m4_type, ['A'], ['m4_localparam_value(m4_mnemonic['_INSTR_FUNCT5'])[', ']m4_src1'], m4_localparam_value(m4_mnemonic['_INSTR_FUNCT7']))[', 5'b']m4_fixed_src2[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}']'])
      '])
   '])
   m4_func(instrR4, $width, $type, $op5, $funct3, $imm_funct, $mnemonic, ['
      m4_output(['m4_instr_funct2($@)'])
      m4_func(['asm_']m4_mnemonic, $dest, $src1, $src2, $src3, $rm, =funct3, =mnemonic, ['
         m4_asm_instr_str(R, m4_mnemonic, m4_func_args)
-        m4_out(['['{']m4_asm_reg(m4_src3)[', ']m4_localparam_value(m4_mnemonic['_INSTR_FUNCT2'])[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}']'])
+        m4_output(['['{']m4_asm_reg(m4_src3)[', ']m4_localparam_value(m4_mnemonic['_INSTR_FUNCT2'])[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}']'])
      '])
   '])
   m4_func(instrS, $width, $type, $op5, $funct3, $mnemonic, ['
      m4_output(['m4_instr_funct3($@, ['no_dest'])'])
      m4_func(['asm_']m4_mnemonic, $dest, $src1, $imm, =funct3, =mnemonic, ['
         m4_asm_instr_str(S, m4_mnemonic, m4_func_args)
-        m4_out(['['{']m4_asm_imm_field(m4_imm, 12, 11, 5)[', ']m4_asm_reg(m4_src1)[', ']m4_asm_reg(m4_dest)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_imm_field(m4_imm, 12, 4, 0)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}']'])
+        m4_output(['['{']m4_asm_imm_field(m4_imm, 12, 11, 5)[', ']m4_asm_reg(m4_src1)[', ']m4_asm_reg(m4_dest)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_imm_field(m4_imm, 12, 4, 0)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}']'])
      '])
   '])
   m4_func(instrB, $width, $type, $op5, $funct3, $mnemonic, ['
@@ -221,14 +221,14 @@ m4+definitions(['
      m4_func(['asm_']m4_mnemonic, $src1, $src2, $target, =funct3, =mnemonic, ['
         m4_def(imm, m4_asm_target(13))
         m4_asm_instr_str(B, m4_mnemonic, m4_func_args)
-        m4_out(['{m4_asm_imm_field(m4_imm, 13, 12, 12)[', ']m4_asm_imm_field(m4_imm, 13, 10, 5)[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_imm_field(m4_imm, 13, 4, 1)[', ']m4_asm_imm_field(m4_imm, 13, 11, 11)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['}'])
+        m4_output(['{m4_asm_imm_field(m4_imm, 13, 12, 12)[', ']m4_asm_imm_field(m4_imm, 13, 10, 5)[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_imm_field(m4_imm, 13, 4, 1)[', ']m4_asm_imm_field(m4_imm, 13, 11, 11)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['}'])
      '])
   '])
   m4_func(instrU, $width, $type, $op5, $mnemonic, ['
      m4_output(['m4_instr_no_func($@)'])
      m4_func(['asm_']m4_mnemonic, $dest, $imm, =funct3, =mnemonic, ['
         m4_asm_instr_str(U, m4_mnemonic, m4_func_args)
-        m4_out(['['{']m4_asm_imm_field(m4_imm, 20, 19, 0)[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}']'])
+        m4_output(['['{']m4_asm_imm_field(m4_imm, 20, 19, 0)[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}']'])
      '])
   '])
   m4_func(instrJ, $width, $type, $op5, $mnemonic, ['
@@ -236,7 +236,7 @@ m4+definitions(['
      m4_func(['asm_']m4_mnemonic, $dest, $target, =funct3, =mnemonic, ['
         m4_def(imm, m4_asm_target(21))
         m4_asm_instr_str(J, m4_mnemonic, m4_func_args)
-        m4_out(['['{']m4_asm_imm_field(m4_imm, 21, 20, 20)[', ']m4_asm_imm_field(m4_imm, 21, 10, 1)[', ']m4_asm_imm_field(m4_imm, 21, 11, 11)[', ']m4_asm_imm_field(m4_imm, 21, 19, 12)[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}']'])
+        m4_output(['['{']m4_asm_imm_field(m4_imm, 21, 20, 20)[', ']m4_asm_imm_field(m4_imm, 21, 10, 1)[', ']m4_asm_imm_field(m4_imm, 21, 11, 11)[', ']m4_asm_imm_field(m4_imm, 21, 19, 12)[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}']'])
      '])
   '])
   m4_def(instr_, ['m4_instr_no_func($@)'])
