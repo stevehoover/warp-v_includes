@@ -259,15 +259,16 @@
       rvb_bitcnt#_number($_clk, $_reset, /_top$_din_valid, $['']$_din_ready, /_top$_din_rs1[#_xlen - 1 : 0], /_top$_din_insn3, /_top$_din_insn20, /_top$_din_insn21, /_top$_din_insn22, $['']$_dout_valid, /_top$_dout_ready, $['']$_dout_rd);
 
 
-\SV
-// Include verilog and tlv files.
-/* verilator lint_save */
-/* verilator lint_off CMPCONST */
-/* verilator lint_off WIDTH */
-/* verilator lint_off PINMISSING */
-m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/verilog/rvb_bextdep/rvb_bextdep.v'])
-m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/verilog/rvb_shifter/rvb_shifter.v'])
-m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/verilog/rvb_clmul/rvb_clmul.v'])
-m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/verilog/rvb_crc/rvb_crc.v'])
-m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/verilog/rvb_bitcnt/rvb_bitcnt.v'])
-/* verilator lint_restore */
+\m4
+   m4_str_append(SV_content, ['
+   // Include verilog and tlv files.
+   /* verilator lint_save */
+   /* verilator lint_off CMPCONST */
+   /* verilator lint_off WIDTH */
+   /* verilator lint_off PINMISSING */
+   m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/bf608b29da74c05eb436f51adb170d519d37ac3a/verilog/rvb_bextdep/rvb_bextdep.v'])
+   m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/bf608b29da74c05eb436f51adb170d519d37ac3a/verilog/rvb_shifter/rvb_shifter.v'])
+   m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/bf608b29da74c05eb436f51adb170d519d37ac3a/verilog/rvb_clmul/rvb_clmul.v'])
+   m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/bf608b29da74c05eb436f51adb170d519d37ac3a/verilog/rvb_crc/rvb_crc.v'])
+   m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/bf608b29da74c05eb436f51adb170d519d37ac3a/verilog/rvb_bitcnt/rvb_bitcnt.v'])
+   /* verilator lint_restore */'])
