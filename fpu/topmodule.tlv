@@ -30,30 +30,29 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-\m4
-   m4_str_append(SV_content, ['
-   // Include BaseJump STL FIFO files.
-   /* verilator lint_save */
-   /* verilator lint_off CMPCONST */
-   /* verilator lint_off WIDTH */
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/HardFloat_consts.vi'])
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/HardFloat_localFuncs.vi'])
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/HardFloat_primitives.v'])
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/HardFloat_rawFN.v'])             
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/HardFloat_specialize.v'])
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/HardFloat_specialize.vi'])                   
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/addRecFN.v'])                  
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/compareRecFN.v'])                  
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/divSqrtRecFN_small.v'])                  
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/fNToRecFN.v'])                  
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/iNToRecFN.v'])    
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/isSigNaNRecFN.v'])   
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/mulAddRecFN.v'])            
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/mulRecFN.v'])                  
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/recFNToFN.v'])   
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/recFNToIN.v'])                    
-   m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/recFNToRecFN.v'])                                     
-   /* verilator lint_restore */'])
+\SV
+// Include BaseJump STL FIFO files.
+/* verilator lint_save */
+/* verilator lint_off CMPCONST */
+/* verilator lint_off WIDTH */
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/HardFloat_consts.vi'])
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/HardFloat_localFuncs.vi'])
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/HardFloat_primitives.v'])
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/HardFloat_rawFN.v'])             
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/HardFloat_specialize.v'])
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/HardFloat_specialize.vi'])                   
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/addRecFN.v'])                  
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/compareRecFN.v'])                  
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/divSqrtRecFN_small.v'])                  
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/fNToRecFN.v'])                  
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/iNToRecFN.v'])    
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/isSigNaNRecFN.v'])   
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/mulAddRecFN.v'])            
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/mulRecFN.v'])                  
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/recFNToFN.v'])   
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/recFNToIN.v'])                    
+m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/recFNToRecFN.v'])                                     
+/* verilator lint_restore */'])
 
 \TLV fpu_define(#_expwidth, #_sigwidth, #_intwidth)
     m4_define(['EXPWIDTH'], #_expwidth)
