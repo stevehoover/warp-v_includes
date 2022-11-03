@@ -4,7 +4,7 @@
   // depending on m4_use_localparams.
   // Define localparam and M4_ define.
   // m4_define_localparam(<name>, <localparam-bit-range>, <value>)
-  m4_default_def(['m4_use_localparams'], 1)
+  m4_default_def(use_localparams, 0)
   m4_def(define_localparam,
          ['m4_define(['M4_$1'], $3)m4_ifelse(m4_use_localparams, 1, ['['localparam $2 $1 = $3;']'])'])
   // Use defined localparam or M4_ definition, depending on m4_use_localparams.
@@ -306,6 +306,7 @@
       m4_out(m4_ifelse(m4_use_localparams, 0, [''], m4_dquote(m4_riscv_gen_guts())))
    '])
    m4_proc(riscv_gen_guts, ['
+      // (Output is squashed by caller unless m4_use_localparams.)
       // v---------------------
       // Instruction characterization
 
@@ -316,7 +317,7 @@
       // Associate opcode[6:2] ([1:0] are 2'b11) with mnemonic and instruction type.
       // Instruction type is not in the table, but there seems to be a single instruction type for each of these,
       // so that is mapped here as well.
-      // op5(bits, type, mnemonic)
+      // op5(bits, type, mnemonic)   // (produces localparam output for \SV_plus context)
       m4_out_nl(\SV_plus)
       m4_op5(00000, I, LOAD)
       m4_op5(00001, I, LOAD_FP)
@@ -353,6 +354,7 @@
 
       // For each instruction type, a mask, where each bit indicates whether
       // the op5 corresponding to the bit position is of the given type.
+      // m4_instr calls produce localparam definitions for \SV_plus context)
       m4_out_nl(\SV_plus)
       m4_out(m4_instr_types_sv(m4_instr_types_args))
 
