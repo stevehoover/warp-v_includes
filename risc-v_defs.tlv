@@ -194,21 +194,21 @@
   '])
   m4_proc(instrR, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., ['
      m4_out(m4_instr_funct7($@, m4_mnemonic, m4_ifelse(m4_ext, ['A'], 5, 7)))
-     m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, [3]src2, ['optional rm field'], ..., =ext, =funct3, =mnemonic, ['
+     m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, [3]src2, ['# optional rm field'], ..., =ext, =funct3, =mnemonic, ['
         m4_asm_instr_str(R, m4_mnemonic, m4_func_args)
         m4_out(['{']m4_ifelse(m4_ext, ['A'], ['m4_localparam_value(m4_mnemonic['_INSTR_FUNCT5'])[', ']m4_src1'], m4_localparam_value(m4_mnemonic['_INSTR_FUNCT7']))[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
      '])
   '])
   m4_proc(instrR2, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, [6]fixed_src2, ..., ['
      m4_out(m4_instr_funct7($@, 7, m4_fixed_src2))
-     m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, ['optional rm field'], ..., =ext, =funct3, =fixed_src2, =mnemonic, ['
+     m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, ['# optional rm field'], ..., =ext, =funct3, =fixed_src2, =mnemonic, ['
         m4_asm_instr_str(R, m4_mnemonic, m4_func_args)
         m4_out(['{']m4_ifelse(m4_ext, ['A'], ['m4_localparam_value(m4_mnemonic['_INSTR_FUNCT5'])[', ']m4_src1'], m4_localparam_value(m4_mnemonic['_INSTR_FUNCT7']))[', 5'b']m4_fixed_src2[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
      '])
   '])
   m4_proc(instrR4, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., ['
      m4_out(m4_instr_funct2($@))
-     m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, [3]src2, [4]src3, ['optional rm field'], ..., =funct3, =mnemonic, ['
+     m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, [3]src2, [4]src3, ['# optional rm field'], ..., =funct3, =mnemonic, ['
         m4_asm_instr_str(R, m4_mnemonic, m4_func_args)
         m4_out(['{']m4_asm_reg(m4_src3)[', ']m4_localparam_value(m4_mnemonic['_INSTR_FUNCT2'])[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
      '])
