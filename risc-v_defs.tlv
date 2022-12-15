@@ -2,21 +2,21 @@
 \m4
   // Instruction field values for each instruction are defined as localparams and as M4 defines. Assembly uses one or the other
   // depending on m4_use_localparams.
-  // Define localparam and M4_ define.
-  // m4_define_localparam(<name>, <localparam-bit-range>, <value>)
+  // Define localparam and m5_ constant.
+  // m5_define_localparam(<name>, <localparam-bit-range>, <value>)
   m4_default_def(use_localparams, 0)
-  m4_def(define_localparam,
-         ['m4_define(['M4_$1'], $3)m4_ifelse(m4_use_localparams, 1, ['['localparam $2 $1 = $3;']'])'])
-  // Use defined localparam or M4_ definition, depending on m4_use_localparams.
-  m4_def(localparam_value,
-         ['m4_ifelse(m4_use_localparams, 1, [''], ['M4_'])$1'])
+  m5_def(define_localparam,
+         ['m5_var(['$1'], ['$3'])m4_ifelse(m4_use_localparams, 1, ['['localparam $2 $1 = $3;']'])'])
+  // Use defined localparam or m5_ constant, depending on m4_use_localparams.
+  m5_def(localparam_value,
+         ['m4_ifelse(m4_use_localparams, 1, [''], ['m5_'])$1'])
 
   // --------------------------------------
   // Associate each op5 value with an instruction type.
   // --------------------------------------
 
   // TODO:
-  // We construct M4_OP5_XXXXX_TYPE, and verify each instruction against that.
+  // We construct m5_OP5_XXXXX_TYPE, and verify each instruction against that.
   // Instruction fields are constructed and valid based on op5.
   //...
   // TO UPDATE:
@@ -30,7 +30,7 @@
   // Declares localparam INSTR_TYPE_X_MASK as m4_instr_type_X_mask_expr.
   m4_proc(instr_types_sv, ..., ['
      m4_ifelse(['$1'], [''], [''], ['
-        m4_out_nl(['    ']m4_define_localparam(['INSTR_TYPE_$1_MASK'], ['[31:0]'], m4_instr_type_$1_mask_expr))
+        m4_out_nl(['    ']m5_define_localparam(['INSTR_TYPE_$1_MASK'], ['[31:0]'], m4_instr_type_$1_mask_expr))
         m4_out(m4_instr_types_sv(m4_shift($@)))
      '])
   '])
@@ -39,11 +39,11 @@
   // TODO: Not sure how to extract a bit ($raw_op) from a constant expression. Hoping synthesis optimizes well.
   m4_def(types_decode,
          ['m4_ifelse(['$1'], [''], [''],
-                     ['m4_nl['   assign $$is_']m4_translit(['$1'], ['A-Z'], ['a-z'])['_type = (((']m4_localparam_value(['INSTR_TYPE_$1_MASK'])[') >> $raw_op5) & 32'b1) != 32'b0; ']m4_types_decode(m4_shift($@))'])'])
+                     ['m4_nl['   assign $$is_']m4_translit(['$1'], ['A-Z'], ['a-z'])['_type = (((']m5_localparam_value(['INSTR_TYPE_$1_MASK'])[') >> $raw_op5) & 32'b1) != 32'b0; ']m4_types_decode(m4_shift($@))'])'])
   // Instantiated for each op5 in \SV_plus context.
   m4_out_proc(op5, ..., ['
-     m4_def(OP5_$1_TYPE, $2)
-     m4_out_nl(['   ']m4_define_localparam(['OP5_$3'], ['[4:0]'], ['5'b$1']))
+     m5_def(OP5_$1_TYPE, $2)
+     m4_out_nl(['   ']m5_define_localparam(['OP5_$3'], ['[4:0]'], ['5'b$1']))
      m4_def(instr_type_$2_mask_expr, m4_quote(m4_instr_type_$2_mask_expr)[' | (1 << 5'b$1)'])
   '])
 
@@ -67,8 +67,8 @@
   // Return 1 if the given instruction is supported, [''] otherwise.
   // m4_instr_supported(<args-of-m4_instr(...)>)
   m4_def(instr_supported,
-         ['m4_ifelse(M4_EXT_$3, 1,
-                     ['m4_ifelse(M4_WORD_CNT, ['$2'], 1, [''])'])'])
+         ['m4_ifelse(m5_EXT_$3, 1,
+                     ['m4_ifelse(m5_WORD_CNT, ['$2'], 1, [''])'])'])
 
   // Called for each instruction.
   // Outputs a string to evaluate that outputs indented content for \SV_plus context.
@@ -77,13 +77,13 @@
   m4_out_proc(instr, [1]type, [2]width, [3]ext, [4]op5, ..., ['
      m4_def(mnemonic, m4_argn($#, $@))
      // check instr type
-     m4_ifelse(M4_OP5_$4_TYPE, m4_ifdef(['m4_instr_type_of_$1'], m4_instr_type_of_$1, $1),
+     m4_ifelse(m5_OP5_$4_TYPE, m4_ifdef(['m4_instr_type_of_$1'], m4_instr_type_of_$1, $1),
         [''],
-        ['m4_errprint(['Instruction ']m4_mnemonic[''s type (']m4_type[') is inconsistant with its op5 code (']m4_op5[') of type ']m4_echo(['M4_OP5_']m4_op5['_TYPE'])[' on line ']m4___line__[' of file ']m4_FILE.m4_new_line)']
+        ['m4_errprint(['Instruction ']m4_mnemonic[''s type (']m4_type[') is inconsistant with its op5 code (']m4_op5[') of type ']m4_echo(['m5_OP5_']m4_op5['_TYPE'])[' on line ']m4___line__[' of file ']m4_FILE.m4_new_line)']
      )
      // if instrs extension is supported and instr is for the right machine width, include it
      m4_ifelse(m4_instr_supported($@), 1, ['
-        m4_out(['   ']m4_dquote(m4_define_localparam(m4_mnemonic['_INSTR_OPCODE'], ['[6:0]'], ['7'b']m4_op5['11'])))
+        m4_out(['   ']m4_dquote(m5_define_localparam(m4_mnemonic['_INSTR_OPCODE'], ['[6:0]'], ['7'b']m4_op5['11'])))
         m4_out_nl(m4_dquote(m4_instr$1(m4_mnemonic, m4_shift($@))))
      '])
   '])
@@ -95,24 +95,24 @@
   m4_def(op5_and_funct3,
          ['$raw_op5 == 5'b$3 m4_ifelse($4, ['rm'], [''], ['&& $raw_funct3 == 3'b$4'])'])
   m4_def(funct3_localparam,
-         ['m4_ifelse(['$2'], ['rm'], [''], ['m4_define_localparam(['$1_INSTR_FUNCT3'], ['[2:0]'], ['3'b$2'])'])'])
+         ['m4_ifelse(['$2'], ['rm'], [''], ['m5_define_localparam(['$1_INSTR_FUNCT3'], ['[2:0]'], ['3'b$2'])'])'])
   // m4_asm_<MNEMONIC> output for funct3 or rm, returned in unquoted context so arg references can be produced. 'rm' is always the last m4_asm_<MNEMONIC> arg (m4_arg(#)).
   //   Args: $1: MNEMONIC, $2: funct3 field of instruction definition (or 'rm')
   // TODO: Remove "new_" from name below.
-  m4_def(new_asm_funct3, ['['m4_ifelse($2, ['rm'], ['3'b']m4_rm, m4_localparam_value(['$1_INSTR_FUNCT3']))']'])
+  m4_def(new_asm_funct3, ['['m4_ifelse($2, ['rm'], ['3'b']m4_rm, m5_localparam_value(['$1_INSTR_FUNCT3']))']'])
   
   // Opcode + funct3 + funct7 (R-type, R2-type). $@ as for m4_instrX(..), $7: MNEMONIC, $8: number of bits of leading bits of funct7 to interpret. If 5, for example, use the term funct5, $9: (opt) for R2, the r2 value.
   m4_def(instr_funct7,
-         ['m4_instr_decode_expr($7, m4_op5_and_funct3($@)[' && $raw_funct7'][6:m4_eval(7-$8)][' == $8'b$5']m4_ifelse($9, [''], [''], [' && $raw_rs2 == 5'b$9']))m4_funct3_localparam(['$7'], ['$4'])m4_define_localparam(['$7_INSTR_FUNCT$8'], ['[$8-1:0]'], ['$8'b$5'])'])
+         ['m4_instr_decode_expr($7, m4_op5_and_funct3($@)[' && $raw_funct7'][6:m4_eval(7-$8)][' == $8'b$5']m4_ifelse($9, [''], [''], [' && $raw_rs2 == 5'b$9']))m4_funct3_localparam(['$7'], ['$4'])m5_define_localparam(['$7_INSTR_FUNCT$8'], ['[$8-1:0]'], ['$8'b$5'])'])
   // For cases w/ extra shamt bit that cuts into funct7.
   m4_def(instr_funct6,
-         ['m4_instr_decode_expr($7, m4_op5_and_funct3($@)[' && $raw_funct7[6:1] == 6'b$5'])m4_funct3_localparam(['$7'], ['$4'])m4_define_localparam(['$7_INSTR_FUNCT6'], ['[6:0]'], ['6'b$5'])'])
+         ['m4_instr_decode_expr($7, m4_op5_and_funct3($@)[' && $raw_funct7[6:1] == 6'b$5'])m4_funct3_localparam(['$7'], ['$4'])m5_define_localparam(['$7_INSTR_FUNCT6'], ['[6:0]'], ['6'b$5'])'])
   // Opcode + funct3 + func7[1:0] (R4-type)
   m4_def(instr_funct2,
-         ['m4_instr_decode_expr($6, m4_op5_and_funct3($@)[' && $raw_funct7[1:0] == 2'b$5'])m4_funct3_localparam(['$6'], ['$4'])m4_define_localparam(['$6_INSTR_FUNCT2'], ['[1:0]'], ['2'b$5'])'])
+         ['m4_instr_decode_expr($6, m4_op5_and_funct3($@)[' && $raw_funct7[1:0] == 2'b$5'])m4_funct3_localparam(['$6'], ['$4'])m5_define_localparam(['$6_INSTR_FUNCT2'], ['[1:0]'], ['2'b$5'])'])
   // Opcode + funct3 + funct7[6:2] (R-type where funct7 has two lower bits that do not distinguish mnemonic.)
   m4_def(instr_funct5,
-         ['m4_instr_decode_expr($6, m4_op5_and_funct3($@)[' && $raw_funct7[6:2] == 5'b$5'])m4_funct3_localparam(['$6'], ['$4'])m4_define_localparam(['$6_INSTR_FUNCT5'], ['[4:0]'], ['5'b$5'])'])
+         ['m4_instr_decode_expr($6, m4_op5_and_funct3($@)[' && $raw_funct7[6:2] == 5'b$5'])m4_funct3_localparam(['$6'], ['$4'])m5_define_localparam(['$6_INSTR_FUNCT5'], ['[4:0]'], ['5'b$5'])'])
   // Opcode + funct3
   m4_def(instr_funct3,
          ['m4_instr_decode_expr($5, m4_op5_and_funct3($@), $6)m4_funct3_localparam(['$5'], ['$4'])'])
@@ -143,7 +143,7 @@
         [''],
         ['m4_def(
            rslt_mux_expr,
-           m4_dquote(m4_rslt_mux_expr[' |']['m4_plus_new_line       ({']M4_WORD_CNT['{$is_']m4_lc_name['_instr}} & $']m4_lc_name['_rslt)']))'])
+           m4_dquote(m4_rslt_mux_expr[' |']['m4_plus_new_line       ({']m5_WORD_CNT['{$is_']m4_lc_name['_instr}} & $']m4_lc_name['_rslt)']))'])
      m4_append(illegal_instr_expr, [' && ! $is_']m4_lc_name['_instr'])
      m4_append(mnemonic_expr, ['$is_']m4_lc_name['_instr ? "']m4_mnemonic['']m4_substr(['          '], m4_len(m4_mnemonic))['" : '])
   '])
@@ -182,42 +182,42 @@
      m4_out(m4_instr_funct3($@))
      m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, [3]imm, =funct3, =mnemonic, ['
         m4_asm_instr_str(I, m4_mnemonic, m4_func_args)
-        m4_out(['{12'b']m4_imm[', ']m4_asm_reg(m4_src1)[', ']m4_localparam_value(m4_mnemonic['_INSTR_FUNCT3'])[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['})
+        m4_out(['{12'b']m4_imm[', ']m4_asm_reg(m4_src1)[', ']m5_localparam_value(m4_mnemonic['_INSTR_FUNCT3'])[', ']m4_asm_reg(m4_dest)[', ']']m5_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['})
      '])
   '])
   m4_proc(instrIf, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., ['
      m4_out(m4_instr_funct7($@, m4_mnemonic, m4_len(m4_imm_funct)))
      m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, [3]imm, =funct3, =imm_funct, =mnemonic, ['
         m4_asm_instr_str(I, m4_mnemonic, m4_func_args)
-        m4_out(['{']m4_localparam_value(m4_mnemonic['_INSTR_FUNCT']m4_len(m4_imm_funct))[', ']m4_eval(12-m4_len(m4_imm_funct))[''b']m4_imm[', ']m4_asm_reg(m4_src1)[', ']m4_localparam_value(m4_mnemonic['_INSTR_FUNCT3'])[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['})
+        m4_out(['{']m5_localparam_value(m4_mnemonic['_INSTR_FUNCT']m4_len(m4_imm_funct))[', ']m4_eval(12-m4_len(m4_imm_funct))[''b']m4_imm[', ']m4_asm_reg(m4_src1)[', ']m5_localparam_value(m4_mnemonic['_INSTR_FUNCT3'])[', ']m4_asm_reg(m4_dest)[', ']']m5_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['})
      '])
   '])
   m4_proc(instrR, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., ['
      m4_out(m4_instr_funct7($@, m4_mnemonic, m4_ifelse(m4_ext, ['A'], 5, 7)))
      m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, [3]src2, ['# optional rm field'], ..., =ext, =funct3, =mnemonic, ['
         m4_asm_instr_str(R, m4_mnemonic, m4_func_args)
-        m4_out(['{']m4_ifelse(m4_ext, ['A'], ['m4_localparam_value(m4_mnemonic['_INSTR_FUNCT5'])[', ']m4_src1'], m4_localparam_value(m4_mnemonic['_INSTR_FUNCT7']))[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
+        m4_out(['{']m4_ifelse(m4_ext, ['A'], ['m5_localparam_value(m4_mnemonic['_INSTR_FUNCT5'])[', ']m4_src1'], m5_localparam_value(m4_mnemonic['_INSTR_FUNCT7']))[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m5_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
      '])
   '])
   m4_proc(instrR2, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, [6]fixed_src2, ..., ['
      m4_out(m4_instr_funct7($@, 7, m4_fixed_src2))
      m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, ['# optional rm field'], ..., =ext, =funct3, =fixed_src2, =mnemonic, ['
         m4_asm_instr_str(R, m4_mnemonic, m4_func_args)
-        m4_out(['{']m4_ifelse(m4_ext, ['A'], ['m4_localparam_value(m4_mnemonic['_INSTR_FUNCT5'])[', ']m4_src1'], m4_localparam_value(m4_mnemonic['_INSTR_FUNCT7']))[', 5'b']m4_fixed_src2[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
+        m4_out(['{']m4_ifelse(m4_ext, ['A'], ['m5_localparam_value(m4_mnemonic['_INSTR_FUNCT5'])[', ']m4_src1'], m5_localparam_value(m4_mnemonic['_INSTR_FUNCT7']))[', 5'b']m4_fixed_src2[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m5_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
      '])
   '])
   m4_proc(instrR4, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., ['
      m4_out(m4_instr_funct2($@))
      m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, [3]src2, [4]src3, ['# optional rm field'], ..., =funct3, =mnemonic, ['
         m4_asm_instr_str(R, m4_mnemonic, m4_func_args)
-        m4_out(['{']m4_asm_reg(m4_src3)[', ']m4_localparam_value(m4_mnemonic['_INSTR_FUNCT2'])[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
+        m4_out(['{']m4_asm_reg(m4_src3)[', ']m5_localparam_value(m4_mnemonic['_INSTR_FUNCT2'])[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m5_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
      '])
   '])
   m4_proc(instrS, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, ..., ['
      m4_out(m4_instr_funct3($@, ['no_dest']))
      m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, [3]imm, =funct3, =mnemonic, ['
         m4_asm_instr_str(S, m4_mnemonic, m4_func_args)
-        m4_out(['{']m4_asm_imm_field(m4_imm, 12, 11, 5)[', ']m4_asm_reg(m4_src1)[', ']m4_asm_reg(m4_dest)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_imm_field(m4_imm, 12, 4, 0)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
+        m4_out(['{']m4_asm_imm_field(m4_imm, 12, 11, 5)[', ']m4_asm_reg(m4_src1)[', ']m4_asm_reg(m4_dest)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_imm_field(m4_imm, 12, 4, 0)[', ']']m5_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
      '])
   '])
   m4_proc(instrB, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, ..., ['
@@ -225,14 +225,14 @@
      m4_proc(['asm_']m4_mnemonic, [1]src1, [2]src2, [3]target, =funct3, =mnemonic, ['
         m4_def(imm, m4_asm_target(13))
         m4_asm_instr_str(B, m4_mnemonic, m4_func_args)
-        m4_out({m4_asm_imm_field(m4_imm, 13, 12, 12)[', ']m4_asm_imm_field(m4_imm, 13, 10, 5)[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_imm_field(m4_imm, 13, 4, 1)[', ']m4_asm_imm_field(m4_imm, 13, 11, 11)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['})
+        m4_out({m4_asm_imm_field(m4_imm, 13, 12, 12)[', ']m4_asm_imm_field(m4_imm, 13, 10, 5)[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_imm_field(m4_imm, 13, 4, 1)[', ']m4_asm_imm_field(m4_imm, 13, 11, 11)[', ']']m5_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['})
      '])
   '])
   m4_proc(instrU, mnemonic, [1]width, [2]ext, [3]op5, ..., ['
      m4_out(m4_instr_no_func(m4_mnemonic, m4_op5))
      m4_proc(['asm_']m4_mnemonic, [1]dest, [2]imm, =mnemonic, ['
         m4_asm_instr_str(U, m4_mnemonic, m4_func_args)
-        m4_out(['{']m4_asm_imm_field(m4_imm, 20, 19, 0)[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
+        m4_out(['{']m4_asm_imm_field(m4_imm, 20, 19, 0)[', ']m4_asm_reg(m4_dest)[', ']']m5_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
      '])
   '])
   m4_proc(instrJ, mnemonic, [1]width, [2]ext, [3]op5, ..., ['
@@ -240,7 +240,7 @@
      m4_proc(['asm_']m4_mnemonic, [1]dest, [2]target, =mnemonic, ['
         m4_def(imm, m4_asm_target(21))
         m4_asm_instr_str(J, m4_mnemonic, m4_func_args)
-        m4_out(['{']m4_asm_imm_field(m4_imm, 21, 20, 20)[', ']m4_asm_imm_field(m4_imm, 21, 10, 1)[', ']m4_asm_imm_field(m4_imm, 21, 11, 11)[', ']m4_asm_imm_field(m4_imm, 21, 19, 12)[', ']m4_asm_reg(m4_dest)[', ']']m4_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
+        m4_out(['{']m4_asm_imm_field(m4_imm, 21, 20, 20)[', ']m4_asm_imm_field(m4_imm, 21, 10, 1)[', ']m4_asm_imm_field(m4_imm, 21, 11, 11)[', ']m4_asm_imm_field(m4_imm, 21, 19, 12)[', ']m4_asm_reg(m4_dest)[', ']']m5_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
      '])
   '])
   m4_proc(instr_, mnemonic, [1]width, [2]ext, [3]op5, ['
@@ -254,8 +254,8 @@
 
 
   // Instruction fields (User ISA Manual 2.2, Fig. 2.2)
-  m4_define_fields(['M4_INSTR'], 32, FUNCT7, 25, RS2, 20, RS1, 15, FUNCT3, 12, RD, 7, OP5, 2, OP2, 0)
-
+  m5_define_fields(INSTR, 32, FUNCT7, 25, RS2, 20, RS1, 15, FUNCT3, 12, RD, 7, OP5, 2, OP2, 0)
+  m5_errprint_nl(DEBUG: INSTR: m5_INSTR_FIELDS)
 
   //=========
   // Specifically for assembler.
@@ -269,9 +269,9 @@
   //                 for unsigned, must be in the range 0 .. 2**digits)
   m4_def(unsigned_int_to_fixed_binary, ['m4_ifelse(m4_eval($1 > 1), 1, ['m4_unsigned_int_to_fixed_binary(m4_eval($1-1), m4_eval($2 >> 1))'])['']m4_eval($2 % 2)'])
   m4_def(signed_int_to_fixed_binary, ['m4_unsigned_int_to_fixed_binary(['$1'], m4_ifelse(m4_eval($2 >= 0), 1, ['$2'], ['m4_eval($2 + 2 ** $1)']))'])
-  m4_def(label, ['m4_def(label_$1_addr, M4_NUM_INSTRS)'])
-  // m4_label_to_imm(label, bit-width): Convert a label (excluding :) to an immediate for current M4_NUM_INSTRS.
-  m4_def(label_to_imm, ['m4_signed_int_to_fixed_binary($2, m4_ifdef(['m4_label_$1_addr'], ['m4_eval((m4_label_$1_addr - M4_NUM_INSTRS) * 4)'], ['m4_errprint(['No assembler label "']$1['"']m4_nl)0000000000000']))'])
+  m4_def(label, ['m4_def(label_$1_addr, m5_NUM_INSTRS)'])
+  // m4_label_to_imm(label, bit-width): Convert a label (excluding :) to an immediate for current m5_NUM_INSTRS.
+  m4_def(label_to_imm, ['m4_signed_int_to_fixed_binary($2, m4_ifdef(['m4_label_$1_addr'], ['m4_eval((m4_label_$1_addr - m5_NUM_INSTRS) * 4)'], ['m4_errprint(['No assembler label "']$1['"']m4_nl)0000000000000']))'])
   
   // m4_asm_target(width): Output the offset for a given branch target arg in m4_target of the form :label or 1111111111000, with the given bit width.
   m4_def(asm_target, ['m4_ifelse(m4_extract_prefix([':'], target), [':'], ['m4_label_to_imm(m4_target, $1)'], ['m4_target'])'])
@@ -290,12 +290,12 @@
 
   // For debug, a string for an asm instruction.
   m4_def(asm_instr_str, ['m4_with(str, ['['($1) $2 ']']m4_dquote(m4_shift(m4_shift($@))),
-                                  ['m4_def(['instr_str']M4_NUM_INSTRS,
+                                  ['m4_def(['instr_str']m5_NUM_INSTRS,
                                            m4_dquote(m4_str['']m4_substr(['                                        '], m4_len(m4_quote(m4_str)))))'])'])
   // Assemble an instruction.
-  // m4_asm(FOO, ...) defines m4_inst# as m4_asm_FOO(...), counts instructions in M4_NUM_INSTRS ,and outputs a comment.
-  m4_def(NUM_INSTRS, 0)
-  m4_def(asm, ['m4_def(['instr']M4_NUM_INSTRS, m4_asm_$1(m4_shift($@)))['/']['/ Inst #']M4_NUM_INSTRS: $@m4_define(['M4_NUM_INSTRS'], m4_eval(M4_NUM_INSTRS + 1))'])
+  // m4_asm(FOO, ...) defines m4_inst# as m4_asm_FOO(...), counts instructions in m5_NUM_INSTRS ,and outputs a comment.
+  m5_def(NUM_INSTRS, 0)
+  m4_def(asm, ['m4_def(['instr']m5_NUM_INSTRS, m4_asm_$1(m4_shift($@)))['/']['/ Inst #']m5_NUM_INSTRS: $@m4_define(['m5_NUM_INSTRS'], m4_eval(m5_NUM_INSTRS + 1))'])
 
   //=========
 // M4-generated code.
