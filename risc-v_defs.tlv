@@ -62,7 +62,7 @@
   //   o result MUX expression to select result of the appropriate execution expression
   //   o $illegal_instruction expression
   //   o localparam definitions for fields
-  //   o m4_asm(<MNEMONIC>, ...) to assemble instructions to their binary representations
+  //   o m5_asm(<MNEMONIC>, ...) to assemble instructions to their binary representations
 
   // Return 1 if the given instruction is supported, [''] otherwise.
   // m4_instr_supported(<args-of-m4_instr(...)>)
@@ -127,7 +127,7 @@
   // m4_instr_decode_expr macro
   // Args: (MNEMONIC, decode_expr, (opt)['no_dest']/other)
   // Extends the following definitions to reflect the given instruction <mnemonic>:
-  m4_def(['# instructiton decode: $is_<mnemonic>_instr = ...; ...'],
+  m5_def(['# instructiton decode: $is_<mnemonic>_instr = ...; ...'],
          decode_expr, [''],
          ['# result combining expr.: ({32{$is_<mnemonic>_instr}} & $<mnemonic>_rslt) | ...'],
          rslt_mux_expr, [''],
@@ -138,14 +138,12 @@
   m4_proc(instr_decode_expr, mnemonic, expr, ..., ['
      // Lower case instruction name
      m4_var(lc_name, m4_translit(m4_mnemonic, ['A-Z'], ['a-z']))
-     m4_append_var(decode_expr, ['$is_']m4_lc_name['_instr = ']m4_expr[';']m4_nl)
+     m5_append_macro(decode_expr, ['$is_']m4_lc_name['_instr = ']m4_expr[';']m4_nl)
      m4_ifelse(['$1'], ['no_dest'],
         [''],
-        ['m4_def(
-           rslt_mux_expr,
-           m4_dquote(m4_rslt_mux_expr[' |']['m4_plus_new_line       ({']m5_WORD_CNT['{$is_']m4_lc_name['_instr}} & $']m4_lc_name['_rslt)']))'])
+        ['m5_append_macro(rslt_mux_expr, [' |']['m4_plus_new_line       ({']m5_WORD_CNT['{$is_']m4_lc_name['_instr}} & $']m4_lc_name['_rslt)'])'])
      m4_append(illegal_instr_expr, [' && ! $is_']m4_lc_name['_instr'])
-     m4_append(mnemonic_expr, ['$is_']m4_lc_name['_instr ? "']m4_mnemonic['']m4_substr(['          '], m4_len(m4_mnemonic))['" : '])
+     m5_append_macro(mnemonic_expr, ['$is_']m4_lc_name['_instr ? "']m4_mnemonic['']m4_substr(['          '], m4_len(m4_mnemonic))['" : '])
   '])
 
   // The first arg of m4_instr(..) is a type, and a type-specific macro is invoked. Types are those defined by RISC-V, plus:
@@ -194,21 +192,21 @@
   '])
   m4_proc(instrR, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., ['
      m4_out(m4_instr_funct7($@, m4_mnemonic, m4_ifelse(m4_ext, ['A'], 5, 7)))
-     m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, [3]src2, ['# optional rm field'], ..., =ext, =funct3, =mnemonic, ['
+     m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, [3]src2, ?[4]rm, =ext, =funct3, =mnemonic, ['
         m4_asm_instr_str(R, m4_mnemonic, m4_func_args)
         m4_out(['{']m4_ifelse(m4_ext, ['A'], ['m5_localparam_value(m4_mnemonic['_INSTR_FUNCT5'])[', ']m4_src1'], m5_localparam_value(m4_mnemonic['_INSTR_FUNCT7']))[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m5_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
      '])
   '])
   m4_proc(instrR2, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, [6]fixed_src2, ..., ['
      m4_out(m4_instr_funct7($@, 7, m4_fixed_src2))
-     m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, ['# optional rm field'], ..., =ext, =funct3, =fixed_src2, =mnemonic, ['
+     m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, ?[3]rm, =ext, =funct3, =fixed_src2, =mnemonic, ['
         m4_asm_instr_str(R, m4_mnemonic, m4_func_args)
         m4_out(['{']m4_ifelse(m4_ext, ['A'], ['m5_localparam_value(m4_mnemonic['_INSTR_FUNCT5'])[', ']m4_src1'], m5_localparam_value(m4_mnemonic['_INSTR_FUNCT7']))[', 5'b']m4_fixed_src2[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m5_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
      '])
   '])
   m4_proc(instrR4, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., ['
      m4_out(m4_instr_funct2($@))
-     m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, [3]src2, [4]src3, ['# optional rm field'], ..., =funct3, =mnemonic, ['
+     m4_proc(['asm_']m4_mnemonic, [1]dest, [2]src1, [3]src2, [4]src3, ?[5]rm, =funct3, =mnemonic, ['
         m4_asm_instr_str(R, m4_mnemonic, m4_func_args)
         m4_out(['{']m4_asm_reg(m4_src3)[', ']m5_localparam_value(m4_mnemonic['_INSTR_FUNCT2'])[', ']m4_asm_reg(m4_src2)[', ']m4_asm_reg(m4_src1)[', ']']m4_new_asm_funct3(m4_mnemonic, m4_funct3)['[', ']m4_asm_reg(m4_dest)[', ']']m5_localparam_value(m4_mnemonic['_INSTR_OPCODE'])['['}'])
      '])
@@ -249,13 +247,12 @@
 
   // For each instruction type.
   // Declare localparam[31:0] INSTR_TYPE_X_MASK, initialized to 0 that will be given a 1 bit for each op5 value of its type.
-  m4_def(instr_types_args, ['I, R, R2, R4, S, B, J, U, _'])
-  m4_instr_types(m4_instr_types_args)
+  m5_def(instr_types_args, ['I, R, R2, R4, S, B, J, U, _'])
+  m4_instr_types(m5_instr_types_args)
 
 
   // Instruction fields (User ISA Manual 2.2, Fig. 2.2)
   m5_define_fields(INSTR, 32, FUNCT7, 25, RS2, 20, RS1, 15, FUNCT3, 12, RD, 7, OP5, 2, OP2, 0)
-  m5_errprint_nl(DEBUG: INSTR: m5_INSTR_FIELDS)
 
   //=========
   // Specifically for assembler.
@@ -290,12 +287,12 @@
 
   // For debug, a string for an asm instruction.
   m4_def(asm_instr_str, ['m4_with(str, ['['($1) $2 ']']m4_dquote(m4_shift(m4_shift($@))),
-                                  ['m4_def(['instr_str']m5_NUM_INSTRS,
+                                  ['m5_def(['instr_str']m5_NUM_INSTRS,
                                            m4_dquote(m4_str['']m4_substr(['                                        '], m4_len(m4_quote(m4_str)))))'])'])
   // Assemble an instruction.
-  // m4_asm(FOO, ...) defines m4_inst# as m4_asm_FOO(...), counts instructions in m5_NUM_INSTRS ,and outputs a comment.
+  // m5_asm(FOO, ...) defines m4_inst# as m4_asm_FOO(...), counts instructions in m5_NUM_INSTRS ,and outputs a comment.
   m5_def(NUM_INSTRS, 0)
-  m4_def(asm, ['m4_def(['instr']m5_NUM_INSTRS, m4_asm_$1(m4_shift($@)))['/']['/ Inst #']m5_NUM_INSTRS: $@m4_define(['m5_NUM_INSTRS'], m4_eval(m5_NUM_INSTRS + 1))'])
+  m5_def(asm, ['m5_def(['instr']m5_NUM_INSTRS, m4_asm_$1(m4_shift($@)))['/']['/ Inst #']m5_NUM_INSTRS: $@m4_define(['m5_NUM_INSTRS'], m4_eval(m5_NUM_INSTRS + 1))'])
 
   //=========
 // M4-generated code.
@@ -356,7 +353,7 @@
       // the op5 corresponding to the bit position is of the given type.
       // m4_instr calls produce localparam definitions for \SV_plus context)
       m4_out_nl(\SV_plus)
-      m4_out(m4_instr_types_sv(m4_instr_types_args))
+      m4_out(m4_instr_types_sv(m5_instr_types_args))
 
       m4_out_nl(['// Instruction characterization.'])
       m4_out_nl(['// (User ISA Manual 2.2, Table 19.2)'])

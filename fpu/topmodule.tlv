@@ -52,7 +52,7 @@ m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_include
 m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/recFNToFN.v'])   
 m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/recFNToIN.v'])                    
 m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/34d74cc11b75b01d81101701a7dc93d045314ac6/fpu/hardfloat_verilog/recFNToRecFN.v'])                                     
-/* verilator lint_restore */'])
+/* verilator lint_restore */)
 
 \TLV fpu_define(#_expwidth, #_sigwidth, #_intwidth)
     m4_define(['EXPWIDTH'], #_expwidth)
