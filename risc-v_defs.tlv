@@ -97,7 +97,7 @@
   // m4_asm_<MNEMONIC> output for funct3 or rm, returned in unquoted context so arg references can be produced. 'rm' is always the last m4_asm_<MNEMONIC> arg (m4_arg(#)).
   //   Args: $1: MNEMONIC, $2: funct3 field of instruction definition (or 'rm')
   // TODO: Remove "new_" from name below.
-  macro(asm_funct3, ['['m4_ifelse($2, ['rm'], ['3'b']m4_rm, m5_localparam_value(['$1_INSTR_FUNCT3']))']'])
+  macro(asm_funct3, ['['m4_ifelse($2, ['rm'], ['3'b']m5_rm, m5_localparam_value(['$1_INSTR_FUNCT3']))']'])
   
   // Opcode + funct3 + funct7 (R-type, R2-type). $@ as for m4_instrX(..), $7: MNEMONIC, $8: number of bits of leading bits of funct7 to interpret. If 5, for example, use the term funct5, $9: (opt) for R2, the r2 value.
   macro(instr_funct7,
@@ -116,8 +116,7 @@
          ['m5_instr_decode_expr($5, m5_op5_and_funct3($@), $6)m5_funct3_localparam(['$5'], ['$4'])'])
   // Opcode
   fn(instr_no_func, mnemonic, op5, [
-     =m5_instr_decode_expr(m5_mnemonic, ['$raw_op5 == 5'b']m5_op5)
-     =m4_null()
+     instr_decode_expr(m5_mnemonic, ['$raw_op5 == 5'b']m5_op5)
   ])
 
   macro(instr_viz,
