@@ -177,42 +177,42 @@
   fn(instrI, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, ..., {
      ~instr_funct3($@)
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]imm, ^funct3, ^mnemonic, {
-        asm_instr_str(I, m5_mnemonic, m4_func_args)
+        asm_instr_str(I, m5_mnemonic, m5_fn_args)
         ~(['{12'b']m5_imm[', ']m5_asm_reg(m5_src1)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT3'])[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['})
      })
   })
   fn(instrIf, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., {
      ~instr_funct7($@, m5_mnemonic, m4_len(m5_imm_funct))
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]imm, ^funct3, ^imm_funct, ^mnemonic, {
-        asm_instr_str(I, m5_mnemonic, m4_func_args)
+        asm_instr_str(I, m5_mnemonic, m5_fn_args)
         ~(['{']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT']m4_len(m5_imm_funct))[', ']m4_eval(12-m4_len(m5_imm_funct))[''b']m5_imm[', ']m5_asm_reg(m5_src1)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT3'])[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['})
      })
   })
   fn(instrR, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., {
      ~instr_funct7($@, m5_mnemonic, m4_ifelse(m5_ext, ['A'], 5, 7))
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]src2, ?[4]rm, ^ext, ^funct3, ^mnemonic, {
-        asm_instr_str(R, m5_mnemonic, m4_func_args)
+        asm_instr_str(R, m5_mnemonic, m5_fn_args)
         ~(['{']m4_ifelse(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7']))[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']']m5_asm_funct3(m5_mnemonic, m5_funct3)['[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['['}'])
      })
   })
   fn(instrR2, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, [6]fixed_src2, ..., {
      ~instr_funct7($@, 7, m5_fixed_src2)
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, ?[3]rm, ^ext, ^funct3, ^fixed_src2, ^mnemonic, {
-        asm_instr_str(R, m5_mnemonic, m4_func_args)
+        asm_instr_str(R, m5_mnemonic, m5_fn_args)
         ~(['{']m4_ifelse(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7']))[', 5'b']m5_fixed_src2[', ']m5_asm_reg(m5_src1)[', ']']m5_asm_funct3(m5_mnemonic, m5_funct3)['[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['['}'])
      })
   })
   fn(instrR4, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., {
      ~instr_funct2($@)
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]src2, [4]src3, ?[5]rm, ^funct3, ^mnemonic, {
-        asm_instr_str(R, m5_mnemonic, m4_func_args)
+        asm_instr_str(R, m5_mnemonic, m5_fn_args)
         ~(['{']m5_asm_reg(m5_src3)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT2'])[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']']m5_asm_funct3(m5_mnemonic, m5_funct3)['[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['['}'])
      })
   })
   fn(instrS, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, ..., {
      ~instr_funct3($@, ['no_dest'])
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]imm, ^funct3, ^mnemonic, {
-        asm_instr_str(S, m5_mnemonic, m4_func_args)
+        asm_instr_str(S, m5_mnemonic, m5_fn_args)
         ~(['{']m5_asm_imm_field(m5_imm, 12, 11, 5)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_reg(m5_dest)[', ']']m5_asm_funct3(m5_mnemonic, m5_funct3)['[', ']m5_asm_imm_field(m5_imm, 12, 4, 0)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['['}'])
      })
   })
@@ -220,14 +220,14 @@
      ~instr_funct3($@, no_dest)
      fn(['asm_']m5_mnemonic, [1]src1, [2]src2, [3]target, ^funct3, ^mnemonic, {
         def(imm, m5_asm_target(13))
-        asm_instr_str(B, m5_mnemonic, m4_func_args)
+        asm_instr_str(B, m5_mnemonic, m5_fn_args)
         ~({m5_asm_imm_field(m5_imm, 13, 12, 12)[', ']m5_asm_imm_field(m5_imm, 13, 10, 5)[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']']m5_asm_funct3(m5_mnemonic, m5_funct3)['[', ']m5_asm_imm_field(m5_imm, 13, 4, 1)[', ']m5_asm_imm_field(m5_imm, 13, 11, 11)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['})
      })
   })
   fn(instrU, mnemonic, [1]width, [2]ext, [3]op5, ..., {
      ~instr_no_func(m5_mnemonic, m5_op5)
      fn(['asm_']m5_mnemonic, [1]dest, [2]imm, ^mnemonic, {
-        asm_instr_str(U, m5_mnemonic, m4_func_args)
+        asm_instr_str(U, m5_mnemonic, m5_fn_args)
         ~(['{']m5_asm_imm_field(m5_imm, 20, 19, 0)[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['['}'])
      })
   })
@@ -235,7 +235,7 @@
      ~instr_no_func(m5_mnemonic, m5_op5)
      fn(['asm_']m5_mnemonic, [1]dest, [2]target, ^mnemonic, {
         def(imm, m5_asm_target(21))
-        asm_instr_str(J, m5_mnemonic, m4_func_args)
+        asm_instr_str(J, m5_mnemonic, m5_fn_args)
         ~(['{']m5_asm_imm_field(m5_imm, 21, 20, 20)[', ']m5_asm_imm_field(m5_imm, 21, 10, 1)[', ']m5_asm_imm_field(m5_imm, 21, 11, 11)[', ']m5_asm_imm_field(m5_imm, 21, 19, 12)[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['['}'])
      })
   })
