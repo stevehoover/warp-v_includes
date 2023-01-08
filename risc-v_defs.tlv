@@ -43,6 +43,7 @@
   // Instantiated for each op5 in \SV_plus context.
   fn(op5, ..., [
      def(OP5_$1_TYPE, $2)
+     var(op5_named_$2, $1)
      ~nl(['   ']m5_define_localparam(['OP5_$3'], ['[4:0]'], ['5'b$1']))
      def(instr_type_$2_mask_expr, m4_quote(m5_instr_type_$2_mask_expr)[' | (1 << 5'b$1)'])
   ])
@@ -77,8 +78,8 @@
   fn(instr, [1]type, [2]width, [3]ext, [4]op5, ..., [
      var(mnemonic, m5_argn($#, $@))
      // check instr type
-     ifne(m5_OP5_$4_TYPE, m5_ifdef(['m5_instr_type_of_$1'], m5_instr_type_of_$1, ['$1']),
-        ['m5_errprint(['Instruction ']m5_mnemonic[''s type (']m5_type[') is inconsistant with its op5 code (']m5_op5[') of type ']m5_eval(['m5_OP5_']m5_op5['_TYPE'])[' on line ']m4___line__[' of file ']m4_FILE.m5_nl)'])
+     ifne(m5_OP5_$4_TYPE, m5_ifdef(['instr_type_of_$1'], m5_instr_type_of_$1, ['$1']),
+        ['m5_error(['Instruction ']m5_mnemonic[''s type (']m5_type[') is inconsistant with its op5 code (']m5_op5[') of type ']m5_eval(['m5_OP5_']m5_op5['_TYPE'])['.'])'])
      // if instrs extension is supported and instr is for the right machine width, include it
      ~ifeq(m5_instr_supported($@), 1, [
         ~(['   ']m5_define_localparam(m5_mnemonic['_INSTR_OPCODE'], ['[6:0]'], ['7'b']m5_op5['11']))
@@ -445,8 +446,8 @@
       ~instr(R4, 32, F, 10001, rm, 00, FMSUBS)
       ~instr(R4, 32, F, 10010, rm, 00, FNMSUBS)
       ~instr(R4, 32, F, 10011, rm, 00, FNMADDS)
-      ~instr(R, 32, F, 10100, rm, 0000000, FADDS)
-      ~instr(R, 32, F, 10100, rm, 0000100, FSUBS)
+      ~instr(R, 32, F, 10100, rm, 0000000, FADD_S)
+      ~instr(R, 32, F, 10100, rm, 0000100, FSUB_S)
       ~instr(R, 32, F, 10100, rm, 0001000, FMULS)
       ~instr(R, 32, F, 10100, rm, 0001100, FDIVS)
       ~instr(R2, 32, F, 10100, rm, 0101100, 00000, FSQRTS)
@@ -475,9 +476,9 @@
       ~instr(R4, 32, D, 10001, rm, 01, FMSUBD)
       ~instr(R4, 32, D, 10010, rm, 01, FNMSUBD)
       ~instr(R4, 32, D, 10011, rm, 01, FNMADDD)
-      ~instr(R, 32, D, 10100, rm, 0000001, FADDD)
-      ~instr(R, 32, D, 10100, rm, 0000101, FSUBD)
-      ~instr(R, 32, D, 10100, rm, 0001001, FMULD)
+      ~instr(R, 32, D, 10100, rm, 0000001, FADD_D)
+      ~instr(R, 32, D, 10100, rm, 0000101, FSUB_D)
+      ~instr(R, 32, D, 10100, rm, 0001001, FMUL_D)
       ~instr(R, 32, D, 10100, rm, 0001101, FDIVD)
       ~instr(R2, 32, D, 10100, rm, 0101101, 00000, FSQRTD)
       ~instr(R, 32, D, 10100, 000, 0010001, FSGNJD)
@@ -507,54 +508,54 @@
       ~instr(R4, 32, Q, 10001, rm, 11, FMSUBQ)
       ~instr(R4, 32, Q, 10010, rm, 11, FNMSUBQ)
       ~instr(R4, 32, Q, 10011, rm, 11, FNMADDQ)
-      ~instr(R, 32, Q, 10100, rm, 0000011, FADDQ)
-      ~instr(R, 32, Q, 10100, rm, 0000111, FSUBQ)
-      ~instr(R, 32, Q, 10100, rm, 0001011, FMULQ)
+      ~instr(R, 32, Q, 10100, rm, 0000011, FADD_Q)
+      ~instr(R, 32, Q, 10100, rm, 0000111, FSUB_Q)
+      ~instr(R, 32, Q, 10100, rm, 0001011, FMUL_Q)
       ~instr(R, 32, Q, 10100, rm, 0001111, FDIVQ)
-      ~instr(R2, 32, Q, 10100, rm, 0101111, 00000, FSQRTQ)
-      ~instr(R, 32, Q, 10100, 000, 0010011, FSGNJQ)
-      ~instr(R, 32, Q, 10100, 001, 0010011, FSGNJNQ)
-      ~instr(R, 32, Q, 10100, 010, 0010011, FSGNJXQ)
-      ~instr(R, 32, Q, 10100, 000, 0010111, FMINQ)
-      ~instr(R, 32, Q, 10100, 001, 0010111, FMAXQ)
-      ~instr(R2, 32, Q, 10100, rm, 0100000, 00011, FCVTSQ)
-      ~instr(R2, 32, Q, 10100, rm, 0100011, 00000, FCVTQS)
-      ~instr(R2, 32, Q, 10100, rm, 0100001, 00011, FCVTDQ)
-      ~instr(R2, 32, Q, 10100, rm, 0100011, 00001, FCVTQD)
-      ~instr(R, 32, Q, 10100, 010, 1010011, FEQQ)
-      ~instr(R, 32, Q, 10100, 001, 1010011, FLTQ)
-      ~instr(R, 32, Q, 10100, 000, 1010011, FLEQ)
-      ~instr(R2, 32, Q, 10100, 001, 1110011, 00000, FCLASSQ)
-      ~instr(R2, 32, Q, 10100, rm, 1110011, 00000, FCVTWQ)
-      ~instr(R2, 32, Q, 10100, rm, 1100011, 00001, FCVTWUQ)
-      ~instr(R2, 32, Q, 10100, rm, 1101011, 00000, FCVTQW)
-      ~instr(R2, 32, Q, 10100, rm, 1101011, 00001, FCVTQWU)
-      ~instr(R2, 64, Q, 10100, rm, 1100011, 00010, FCVTLQ)
-      ~instr(R2, 64, Q, 10100, rm, 1100011, 00011, FCVTLUQ)
-      ~instr(R2, 64, Q, 10100, rm, 1101011, 00010, FCVTQL)
-      ~instr(R2, 64, Q, 10100, rm, 1101011, 00011, FCVTQLU)
-      ~instr(R2, 32, A, 01011, 010, 00010, 00000, LRW)
-      ~instr(R, 32, A, 01011, 010, 00011, SCW)
-      ~instr(R, 32, A, 01011, 010, 00001, AMOSWAPW)
-      ~instr(R, 32, A, 01011, 010, 00000, AMOADDW)
-      ~instr(R, 32, A, 01011, 010, 00100, AMOXORW)
-      ~instr(R, 32, A, 01011, 010, 01100, AMOANDW)
-      ~instr(R, 32, A, 01011, 010, 01000, AMOORW)
-      ~instr(R, 32, A, 01011, 010, 10000, AMOMINW)
-      ~instr(R, 32, A, 01011, 010, 10100, AMOMAXW)
-      ~instr(R, 32, A, 01011, 010, 11000, AMOMINUW)
-      ~instr(R, 32, A, 01011, 010, 11100, AMOMAXUW)
-      ~instr(R2, 64, A, 01011, 011, 00010, 00000, LRD)
-      ~instr(R, 64, A, 01011, 011, 00011, SCD)
-      ~instr(R, 64, A, 01011, 011, 00001, AMOSWAPD)
-      ~instr(R, 64, A, 01011, 011, 00000, AMOADDD)
-      ~instr(R, 64, A, 01011, 011, 00100, AMOXORD)
-      ~instr(R, 64, A, 01011, 011, 01100, AMOANDD)
-      ~instr(R, 64, A, 01011, 011, 01000, AMOORD)
-      ~instr(R, 64, A, 01011, 011, 10000, AMOMIND)
-      ~instr(R, 64, A, 01011, 011, 10100, AMOMAXD)
-      ~instr(R, 64, A, 01011, 011, 11000, AMOMINUD)
-      ~instr(R, 64, A, 01011, 011, 11100, AMOMAXUD)
+      ~instr(R2, 32, Q, 10100, rm, 0101111, 00000, FSQRT_Q)
+      ~instr(R, 32, Q, 10100, 000, 0010011, FSGNJ_Q)
+      ~instr(R, 32, Q, 10100, 001, 0010011, FSGNJN_Q)
+      ~instr(R, 32, Q, 10100, 010, 0010011, FSGNJX_Q)
+      ~instr(R, 32, Q, 10100, 000, 0010111, FMIN_Q)
+      ~instr(R, 32, Q, 10100, 001, 0010111, FMAX_Q)
+      ~instr(R2, 32, Q, 10100, rm, 0100000, 00011, FCVT_S_Q)
+      ~instr(R2, 32, Q, 10100, rm, 0100011, 00000, FCVT_Q_S)
+      ~instr(R2, 32, Q, 10100, rm, 0100001, 00011, FCVT_D_Q)
+      ~instr(R2, 32, Q, 10100, rm, 0100011, 00001, FCVT_Q_D)
+      ~instr(R, 32, Q, 10100, 010, 1010011, FEQ_Q)
+      ~instr(R, 32, Q, 10100, 001, 1010011, FLT_Q)
+      ~instr(R, 32, Q, 10100, 000, 1010011, FLE_Q)
+      ~instr(R2, 32, Q, 10100, 001, 1110011, 00000, FCLASS_Q)
+      ~instr(R2, 32, Q, 10100, rm, 1110011, 00000, FCVT_W_Q)
+      ~instr(R2, 32, Q, 10100, rm, 1100011, 00001, FCVT_WU_Q)
+      ~instr(R2, 32, Q, 10100, rm, 1101011, 00000, FCVT_Q_W)
+      ~instr(R2, 32, Q, 10100, rm, 1101011, 00001, FCVT_Q_WU)
+      ~instr(R2, 64, Q, 10100, rm, 1100011, 00010, FCVT_L_Q)
+      ~instr(R2, 64, Q, 10100, rm, 1100011, 00011, FCVT_L_UQ)
+      ~instr(R2, 64, Q, 10100, rm, 1101011, 00010, FCVT_Q_L)
+      ~instr(R2, 64, Q, 10100, rm, 1101011, 00011, FCVT_Q_LU)
+      ~instr(R2, 32, A, 01011, 010, 00010, 00000, LR_W)
+      ~instr(R, 32, A, 01011, 010, 00011, SC_W)
+      ~instr(R, 32, A, 01011, 010, 00001, AMOSWAP_W)
+      ~instr(R, 32, A, 01011, 010, 00000, AMOADD_W)
+      ~instr(R, 32, A, 01011, 010, 00100, AMOXOR_W)
+      ~instr(R, 32, A, 01011, 010, 01100, AMOAND_W)
+      ~instr(R, 32, A, 01011, 010, 01000, AMOOR_W)
+      ~instr(R, 32, A, 01011, 010, 10000, AMOMIN_W)
+      ~instr(R, 32, A, 01011, 010, 10100, AMOMAX_W)
+      ~instr(R, 32, A, 01011, 010, 11000, AMOMIN_UW)
+      ~instr(R, 32, A, 01011, 010, 11100, AMOMAX_UW)
+      ~instr(R2, 64, A, 01011, 011, 00010, 00000, LR_D)
+      ~instr(R, 64, A, 01011, 011, 00011, SC_D)
+      ~instr(R, 64, A, 01011, 011, 00001, AMOSWAP_D)
+      ~instr(R, 64, A, 01011, 011, 00000, AMOADD_D)
+      ~instr(R, 64, A, 01011, 011, 00100, AMOXOR_D)
+      ~instr(R, 64, A, 01011, 011, 01100, AMOAND_D)
+      ~instr(R, 64, A, 01011, 011, 01000, AMOOR_D)
+      ~instr(R, 64, A, 01011, 011, 10000, AMOMIN_D)
+      ~instr(R, 64, A, 01011, 011, 10100, AMOMAX_D)
+      ~instr(R, 64, A, 01011, 011, 11000, AMOMIN_UD)
+      ~instr(R, 64, A, 01011, 011, 11100, AMOMAX_UD)
       ~instr(R, 32, B, 01100, 111, 0100000, ANDN)
       ~instr(R, 32, B, 01100, 110, 0100000, ORN)
       ~instr(R, 32, B, 01100, 100, 0100000, XNOR)
@@ -586,16 +587,16 @@
       ~instr(R2, 32, B, 01100, 001, 0110000, 00001, CTZ)
       ~instr(R2, 32, B, 01100, 001, 0110000, 00010, PCNT)
       //~instr(R2, 64, B, 01100, 001, 0110000, 00011, BMATFLIP)
-      ~instr(R2, 32, B, 01100, 001, 0110000, 00100, SEXTB)
-      ~instr(R2, 32, B, 01100, 001, 0110000, 00101, SEXTH)
-      ~instr(R2, 32, B, 01100, 001, 0110000, 10000, CRC32B)
-      ~instr(R2, 32, B, 01100, 001, 0110000, 10001, CRC32H)
-      ~instr(R2, 32, B, 01100, 001, 0110000, 10010, CRC32W)
-      //~instr(R2, 64, B, 01100, 001, 0110000, 10011, CRC32D)
-      ~instr(R2, 32, B, 01100, 001, 0110000, 11000, CRC32CB)
-      ~instr(R2, 32, B, 01100, 001, 0110000, 11001, CRC32CH)
-      ~instr(R2, 32, B, 01100, 001, 0110000, 11010, CRC32CW)
-      //~instr(R2, 64, B, 01100, 001, 0110000, 11011, CRC32CD)
+      ~instr(R2, 32, B, 01100, 001, 0110000, 00100, SEXT_B)
+      ~instr(R2, 32, B, 01100, 001, 0110000, 00101, SEXT_H)
+      ~instr(R2, 32, B, 01100, 001, 0110000, 10000, CRC32_B)
+      ~instr(R2, 32, B, 01100, 001, 0110000, 10001, CRC32_H)
+      ~instr(R2, 32, B, 01100, 001, 0110000, 10010, CRC32_W)
+      //~instr(R2, 64, B, 01100, 001, 0110000, 10011, CRC32_D)
+      ~instr(R2, 32, B, 01100, 001, 0110000, 11000, CRC32C_B)
+      ~instr(R2, 32, B, 01100, 001, 0110000, 11001, CRC32C_H)
+      ~instr(R2, 32, B, 01100, 001, 0110000, 11010, CRC32C_W)
+      //~instr(R2, 64, B, 01100, 001, 0110000, 11011, CRC32C_D)
       ~instr(R, 32, B, 01100, 001, 0000101, CLMUL)
       ~instr(R, 32, B, 01100, 010, 0000101, CLMULR)
       ~instr(R, 32, B, 01100, 011, 0000101, CLMULH)
@@ -616,11 +617,11 @@
       ~instr(If, 32, B, 00100, 001, 000010, SHFLI)
       ~instr(If, 32, B, 00100, 101, 000010, UNSHFLI)
       //~instr(I, 64, B, 01100, 100, ADDIWU)
-      //~instr(If, 64, B, 01100, 001, 000010, SLLIUW)
+      //~instr(If, 64, B, 01100, 001, 000010, SLLI_UW)
       //~instr(R, 64, B, 01110, 000, 0000101, ADDWU)
       //~instr(R, 64, B, 01110, 000, 0100101, SUBWU)
-      //~instr(R, 64, B, 01110, 000, 0000100, ADDUW)
-      //~instr(R, 64, B, 01110, 000, 0100100, SUBUW)
+      //~instr(R, 64, B, 01110, 000, 0000100, ADD_UW)
+      //~instr(R, 64, B, 01110, 000, 0100100, SUBU_W)
       //~instr(R, 64, B, 01110, 001, 0010000, SLOW)
       //~instr(R, 64, B, 01110, 101, 0010000, SROW)
       //~instr(R, 64, B, 01110, 001, 0110000, ROLW)
@@ -656,3 +657,144 @@
       //~instr(R, 64, B, 01110, 100, 0100100, PACKUW)
       //~instr(R, 64, B, 01110, 111, 0100100, BFPW)
    ])
+
+
+
+   // =========
+   // Assembler
+   // =========
+   
+   // These functions go from proper RISC-V assembly code to the pseudo-assembly defined by m5_asm functions.
+   
+   fn(abi_to_reg: ['Map an ABI register name. ABI name -> register name. If field_type is given,
+                    the type is checked and only the index is returned; o.w. the type is returned
+                    as the first character, e.g. "x3". For unknown registers, type is "-" and
+                    a register index is returned that is in range, though meaningless.'],
+      abi: ['ABI or register name'],
+      ?field_type: ['[x|f] register type'],
+   {
+      // Helpers
+      macro(unknown,
+         ['m5_error(['Unrecognized ABI register ']m5_abi)'])
+      // Check that m5_num was found in ABI and $1 <= m5_num <= $2.
+      macro(num_range,
+         ['m5_if(m5_eq(m5_num, ['']) || (m5_num < ['<$1,2>']) || (m5_num > ['<$2,2>']), ['m5_unknown()'])'])
+      // Set and check m5_reg_type.
+      macro(type,
+         ['m5_set(reg_type, ['<$1,2>'])m5_if(m5_neq(m5_field_type, ['']) && m5_neq(m5_reg_type, m5_field_type), ['m5_error(['ABI register "']m5_abi['" of type ']m5_reg_type[' used where type ']m5_field_type[' is expected.'])'])'])
+      
+      var(reg_type, -)  // The type [x|f] corresponding to m5_abi, set by m5_type.
+      var(reg_index, 0)  // Register index, defaulted to 0.
+      // Parse ABI reg name.
+      var_regex(m5_abi, ['\([a-z]+\)\([0-9]*\)'], name, num)
+      else({
+         unknown()
+         // Assume zero
+         set(name, zero)
+      })
+      set(reg_index, m5_case(m5_name,
+         x, [
+            type(x)
+            num_range(0, 31)
+            ~num
+         ],
+         f, [
+            type(f)
+            num_range(0, 31)
+            ~num
+         ],
+         a, [
+            type(x)
+            num_range(0, 7)
+            ~calc(m5_num + 10)
+         ],
+         s, [
+            type(x)
+            num_range(0, 11)
+            ~calc(m5_num + m5_if(m5_num < 2, 8, 16))
+         ],
+         t, [
+            type(x)
+            num_range(0, 6)
+            ~calc(m5_num + m5_if(m5_num < 3, 5, 25))
+         ],
+         ft, [
+            type(f)
+            num_range(0, 7)
+            ~calc(m5_num + m5_if(m5_num < 8, 0, 20))
+         ],
+         fs, [
+            type(f)
+            num_range(0, 11)
+            ~calc(m5_num + m5_if(m5_num < 2, 8, 16))
+         ],
+         fa, [
+            type(f)
+            num_range(0, 7)
+            ~calc(m5_num + 10)
+         ], [
+            // Not a ranged type.
+            // Shouldn't have a range.
+            ~ifeq(m5_num, [''], [''], ['m5_unknown()['0']'])
+            // Handle x types.
+            ~case(m5_name,
+               zero, 0,
+               ra, 1,
+               sp, 2,
+               gp, 3,
+               tp, 4)
+            if_so([
+               type(x)
+            ])
+            // Handle f types (and unrecognized).
+            ~else([
+               ~case(m5_name,
+                  fp, 8)
+               if_so([
+                  type(f)
+               ])
+               ~else([
+                  unknown()
+                  ~(0)
+               ])
+            ])
+         ]))
+      // Return type.
+      ~if_null(field_type, m5_reg_type)
+      // Return index in the range 0..32 even if unknown.
+      ~if_null(reg_index, 0, [
+         ~if(m5_reg_index >= 32, 31, m5_reg_index)
+      ])
+   })
+   
+   
+   fn(assemble_line, str, {
+      
+      /// Strip comment and trailing whitespace from m5_str.
+      var(pos, m5_index(m5_str, ['#']))
+      if(m5_pos >= 0, [
+         set(str, m5_substr(m5_str, 0, m5_pos))
+      ])
+      strip_trailing_whitespace_from(str)
+      
+      /// Parse (uncommented) line.
+      if_regex(m5_str, ['['^\(\s*\)$'], dummy'], {
+         /// Empty line
+         DEBUG(['Found empty line: '])
+      }, ['['^\s+\(\w+\)\s+\(.*\)'], instr, args'], {
+         /// Instruction
+         DEBUG(['Found instruction: ']m5_instr m5_args)
+         var(op5, ...)
+         if(m5_eq(m5_op5_named_LOAD_FP) || m5_eq(m5_op5_named_LOAD_FP), [
+            
+         ])
+      }, ['['^\.\(\w+\)\(\)?'], directive, args'], {
+         /// Directive
+         DEBUG(['Found directive: ']m5_directive m5_args)
+      }, ['['^\(\w+\):\s*$'], label'], {
+         /// Label
+         DEBUG(['Found label: ']m5_label)
+      }, {
+         error(['Could not parse assembly code line: "']m5_str['"'])
+      })
+   })
