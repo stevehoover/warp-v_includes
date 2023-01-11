@@ -284,7 +284,7 @@
   // E.g. m5_asm_imm_field(101011, 17, 7, 3) => 5'b00101
   def(asm_imm_field, ['m4_eval($3 - $4 + 1)'b['']m4_substr(m5_asm_zero_ext($1, $2), m4_eval($2 - $3 - 1), m4_eval($3 - $4 + 1))'])
   // Register operand.
-  def(asm_reg, ['m4_ifelse(m4_substr(['$1'], 0, 1), ['r'], [''], ['m4_ifelse(m4_substr(['$1'], 0, 1), ['x'], [''], ['m4_errprint(['$1 passed to register field.'])'])'])5'd['']m4_substr(['$1'], 1)'])
+  def(asm_reg, ['5'd['']m4_substr(m5_abi_to_reg(['$1']), 1)'])
 
   // For debug, a string for an asm instruction.
   def(asm_instr_str, ['m4_with(str, ['['($1) $2 ']']m4_dquote(m4_shift(m4_shift($@))),
@@ -673,105 +673,91 @@
       abi: ['ABI or register name'],
       ?field_type: ['[x|f] register type'],
    {
-      // Helpers
-      macro(unknown,
-         ['m5_error(['Unrecognized ABI register ']m5_abi)'])
-      // Check that m5_num was found in ABI and $1 <= m5_num <= $2.
-      macro(num_range,
-         ['m5_if(m5_eq(m5_num, ['']) || (m5_num < ['<$1,2>']) || (m5_num > ['<$2,2>']), ['m5_unknown()'])'])
-      // Set and check m5_reg_type.
-      macro(type,
-         ['m5_set(reg_type, ['<$1,2>'])m5_if(m5_neq(m5_field_type, ['']) && m5_neq(m5_reg_type, m5_field_type), ['m5_error(['ABI register "']m5_abi['" of type ']m5_reg_type[' used where type ']m5_field_type[' is expected.'])'])'])
-      
-      var(reg_type, -)  // The type [x|f] corresponding to m5_abi, set by m5_type.
-      var(reg_index, 0)  // Register index, defaulted to 0.
       // Parse ABI reg name.
       var_regex(m5_abi, ['\([a-z]+\)\([0-9]*\)'], name, num)
-      else({
-         unknown()
-         // Assume zero
-         set(name, zero)
-      })
-      set(reg_index, m5_case(m5_name,
-         x, [
-            type(x)
-            num_range(0, 31)
-            ~num
-         ],
-         f, [
-            type(f)
-            num_range(0, 31)
-            ~num
-         ],
-         a, [
-            type(x)
-            num_range(0, 7)
-            ~calc(m5_num + 10)
-         ],
-         s, [
-            type(x)
-            num_range(0, 11)
-            ~calc(m5_num + m5_if(m5_num < 2, 8, 16))
-         ],
-         t, [
-            type(x)
-            num_range(0, 6)
-            ~calc(m5_num + m5_if(m5_num < 3, 5, 25))
-         ],
-         ft, [
-            type(f)
-            num_range(0, 7)
-            ~calc(m5_num + m5_if(m5_num < 8, 0, 20))
-         ],
-         fs, [
-            type(f)
-            num_range(0, 11)
-            ~calc(m5_num + m5_if(m5_num < 2, 8, 16))
-         ],
-         fa, [
-            type(f)
-            num_range(0, 7)
-            ~calc(m5_num + 10)
-         ], [
-            // Not a ranged type.
-            // Shouldn't have a range.
-            ~ifeq(m5_num, [''], [''], ['m5_unknown()['0']'])
-            // Handle x types.
-            ~case(m5_name,
-               zero, 0,
-               ra, 1,
-               sp, 2,
-               gp, 3,
-               tp, 4)
-            if_so([
-               type(x)
-            ])
-            // Handle f types (and unrecognized).
-            ~else([
-               ~case(m5_name,
-                  fp, 8)
-               if_so([
-                  type(f)
-               ])
-               ~else([
-                  unknown()
-                  ~(0)
-               ])
-            ])
-         ]))
-      // Return type.
-      ~if_null(field_type, m5_reg_type)
-      // Return index in the range 0..32 even if unknown.
-      ~if_null(reg_index, 0, [
-         ~if(m5_reg_index >= 32, 31, m5_reg_index)
+      
+      //DEBUG(['Processing ABI: ']m5_abi m5_eval(m5__REG_OF_ABI_NAME_['']m5_uppercase(m5_abi)))
+      /// Look up mapping.
+      if_def(_REG_OF_ABI_NAME_['']m5_uppercase(m5_abi), [
+         var_regex(m5_eval(['m5__REG_OF_ABI_NAME_']m5_uppercase(m5_abi)), ['\([a-z]+\)\([0-9]*\)'], reg_type2, reg_index2)
+         else([
+            error(['BUG: Failed to pattern match ABI type and index.'])
+            set(reg_type2, -, reg_index, 0)
+         ])
       ])
+      else_if(m5_eq(m5_name, x) || m5_eq(m5_name, f), [
+         /// x# or f# register.
+         var(reg_type2, m5_name, reg_index2, m5_num)
+         if(m5_num > 31, [
+            error(['Register ']m5_abi[' index out of range.'])
+            set(reg_index2, 0)
+         ])
+      ])
+      else([
+         error(['Unrecognized ABI register name: "']m5_abi['".'])
+         var(reg_type2, -, reg_index2, 0)
+      ])
+      
+      // Return type and index.
+      ~if_null(field_type, [
+         ~reg_type2
+      ], [
+         if(m5_neq(m5_field_type, m5_reg_type2) && m5_neq(m5_field_type, -), [
+            error(['Register field of type ']m5_field_type[' given ABI register ']m5_abi[' of type ']m5_reg_type2['.'])
+         ])
+      ])
+      ~reg_index2
    })
    
+   
+   /// Define ABI to type/index and type/index to ABI mapping vars for the given ABI name, index, and type (x/f).
+   /// Some register indices have more than one ABI name. Both will be pushed, so the last call
+   /// determines the index-to-ABI mapping.
+   fn(_map_abi_name, abi_name, type, index, [
+      ///DEBUG(['Defining: "']m5_abi_name['" = ']m5_type['']m5_index['.'])
+      var(_REG_OF_ABI_NAME_['']m5_uppercase(m5_abi_name), m5_type['']m5_index)
+      var(_ABI_NAME_OF_['']m5_uppercase(m5_type)['']m5_index, m5_uppercase(m5_abi_name))
+   ])
+   /// Define X/F registers, given a list of ABI names.
+   fn(_map_abi_names, type, ..., [
+      var(index, m5_calc(32 - $#))
+      _map_abi_name(['$1'], m5_type, m5_index)    /// Map, e.g. "gp" -> x3.
+      if($# > 1, [
+         /// Recurse.
+         _map_abi_names(m5_type, m5_shift($@))
+      ])
+   ])
+   
+   /// Define ABI registers.
+   ///
+   /// Define alternate ABI names.
+   _map_abi_name(fp, x, 8)
+   /// Map the X registers.
+   _map_abi_names(x, zero, ra, sp, gp, tp, t0, t1, t2, s0, s1, a0, a1, a2, a3, a4, a5, a6, a7, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, t3, t4, t5, t6)
+   /// Map the F registers.
+   _map_abi_names(f, ft0, ft1, ft2, ft3, ft4, ft5, ft6, ft7, fs0, fs1, fa0, fa1, fa2, fa3, fa4, fa5, fa6, fa7, fs2, fs3, fs4, fs5, fs6, fs7, fs8, fs9, fs10, fs11, ft8, ft9, ft10, ft11)
+
+
+   /// Construct a JavaScript arrays for the register maps.
+   var(js_abi_x_map, [)
+   var(js_abi_f_map, [)
+   eval({
+      fn(js_abi, cnt, [
+         append_var(js_abi_x_map, ['"']m5_eval(m5__ABI_NAME_OF_X['']m5_cnt)['", '])
+         append_var(js_abi_f_map, ['"']m5_eval(m5__ABI_NAME_OF_F['']m5_cnt)['", '])
+         if(m5_cnt < 31, [
+            js_abi(m5_calc(m5_cnt + 1))
+         ])
+      ])
+      js_abi(0)
+      append_var(js_abi_x_map, ])
+      append_var(js_abi_f_map, ])
+   })
    
    fn(assemble_line, str, {
       
       /// Strip comment and trailing whitespace from m5_str.
-      var(pos, m5_index(m5_str, ['#']))
+      var(pos, m5_index_of(m5_str, ['#']))
       if(m5_pos >= 0, [
          set(str, m5_substr(m5_str, 0, m5_pos))
       ])
