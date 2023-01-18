@@ -43,7 +43,7 @@
   // Instantiated for each op5 in \SV_plus context.
   fn(op5, ..., [
      def(OP5_$1_TYPE, $2)
-     var(op5_named_$2, $1)
+     def(op5_named_$3, $1)
      ~nl(['   ']m5_define_localparam(['OP5_$3'], ['[4:0]'], ['5'b$1']))
      def(instr_type_$2_mask_expr, m4_quote(m5_instr_type_$2_mask_expr)[' | (1 << 5'b$1)'])
   ])
@@ -182,65 +182,71 @@
      ~instr_funct3($@)
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]imm, ^funct3, ^mnemonic, {
         asm_instr_str(I, m5_mnemonic, m5_fn_args)
-        ~(['{12'b']m5_imm[', ']m5_asm_reg(m5_src1)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT3'])[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['})
+        ~quote(['{12'b']m5_imm[', ']m5_asm_reg(m5_src1)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT3'])[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrIf, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., {
      ~instr_funct7($@, m5_mnemonic, m4_len(m5_imm_funct))
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]imm, ^funct3, ^imm_funct, ^mnemonic, {
         asm_instr_str(I, m5_mnemonic, m5_fn_args)
-        ~(['{']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT']m4_len(m5_imm_funct))[', ']m4_eval(12-m4_len(m5_imm_funct))[''b']m5_imm[', ']m5_asm_reg(m5_src1)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT3'])[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['})
+        ~quote(['{']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT']m4_len(m5_imm_funct))[', ']m4_eval(12-m4_len(m5_imm_funct))[''b']m5_imm[', ']m5_asm_reg(m5_src1)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT3'])[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrR, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., {
      ~instr_funct7($@, m5_mnemonic, m4_ifelse(m5_ext, ['A'], 5, 7))
-     fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]src2, ?[4]rm, ^ext, ^funct3, ^mnemonic, {
-        asm_instr_str(R, m5_mnemonic, m5_fn_args)
-        ~(['{']m4_ifelse(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7']))[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']']m5_asm_funct3(m5_mnemonic, m5_funct3)['[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['['}'])
+     fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]src2, ?rm, ^ext, ^funct3, ^mnemonic, {
+        asm_instr_str(R, m5_mnemonic, m5_fn_args['']m5_if_null(rm, [''], [', m5_rm']))
+        ~quote(['{']m4_ifelse(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7'])'])[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrR2, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, [6]fixed_src2, ..., {
      ~instr_funct7($@, 7, m5_fixed_src2)
-     fn(['asm_']m5_mnemonic, [1]dest, [2]src1, ?[3]rm, ^ext, ^funct3, ^fixed_src2, ^mnemonic, {
-        asm_instr_str(R, m5_mnemonic, m5_fn_args)
-        ~(['{']m4_ifelse(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7']))[', 5'b']m5_fixed_src2[', ']m5_asm_reg(m5_src1)[', ']']m5_asm_funct3(m5_mnemonic, m5_funct3)['[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['['}'])
+     fn(['asm_']m5_mnemonic, [1]dest, [2]src1, ?rm, ^ext, ^funct3, ^fixed_src2, ^mnemonic, {
+        asm_instr_str(R, m5_mnemonic, m5_fn_args['']m5_if_null(rm, [''], [', m5_rm']))
+        ~quote(['{']m4_ifelse(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7'])'])[', 5'b']m5_fixed_src2[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrR4, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., {
      ~instr_funct2($@)
-     fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]src2, [4]src3, ?[5]rm, ^funct3, ^mnemonic, {
-        asm_instr_str(R, m5_mnemonic, m5_fn_args)
-        ~(['{']m5_asm_reg(m5_src3)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT2'])[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']']m5_asm_funct3(m5_mnemonic, m5_funct3)['[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['['}'])
+     fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]src2, [4]src3, ?rm, ^funct3, ^mnemonic, {
+        asm_instr_str(R, m5_mnemonic, m5_fn_args['']m5_if_null(rm, [''], [', m5_rm']))
+        ~quote(['{']m5_asm_reg(m5_src3)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT2'])[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrS, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, ..., {
      ~instr_funct3($@, ['no_dest'])
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]imm, ^funct3, ^mnemonic, {
         asm_instr_str(S, m5_mnemonic, m5_fn_args)
-        ~(['{']m5_asm_imm_field(m5_imm, 12, 11, 5)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_reg(m5_dest)[', ']']m5_asm_funct3(m5_mnemonic, m5_funct3)['[', ']m5_asm_imm_field(m5_imm, 12, 4, 0)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['['}'])
+        ~quote(['{']m5_asm_imm_field(m5_imm, 12, 11, 5)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_reg(m5_dest)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_imm_field(m5_imm, 12, 4, 0)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrB, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, ..., {
      ~instr_funct3($@, no_dest)
      fn(['asm_']m5_mnemonic, [1]src1, [2]src2, [3]target, ^funct3, ^mnemonic, {
-        def(imm, m5_asm_target(13))
+        var(imm, m5_asm_target(13))
         asm_instr_str(B, m5_mnemonic, m5_fn_args)
-        ~({m5_asm_imm_field(m5_imm, 13, 12, 12)[', ']m5_asm_imm_field(m5_imm, 13, 10, 5)[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']']m5_asm_funct3(m5_mnemonic, m5_funct3)['[', ']m5_asm_imm_field(m5_imm, 13, 4, 1)[', ']m5_asm_imm_field(m5_imm, 13, 11, 11)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['})
+        /// m5_imm can be a label expression, so it's evaluation must be deferred, making the expressions below a bit messy.
+        ~(['['{']m5_asm_imm_field(']m5_imm[', 13, 12, 12)[', ']m5_asm_imm_field(']m5_imm[', 13, 10, 5)[', ']'])
+        ~quote(m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', '])
+        ~(['m5_asm_imm_field(']m5_imm[', 13, 4, 1)[', ']m5_asm_imm_field(']m5_imm[', 13, 11, 11)[', ']'])
+        ~quote(m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrU, mnemonic, [1]width, [2]ext, [3]op5, ..., {
      ~instr_no_func(m5_mnemonic, m5_op5)
      fn(['asm_']m5_mnemonic, [1]dest, [2]imm, ^mnemonic, {
         asm_instr_str(U, m5_mnemonic, m5_fn_args)
-        ~(['{']m5_asm_imm_field(m5_imm, 20, 19, 0)[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['['}'])
+        ~quote(['{']m5_asm_imm_field(m5_imm, 20, 19, 0)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrJ, mnemonic, [1]width, [2]ext, [3]op5, ..., {
      ~instr_no_func(m5_mnemonic, m5_op5)
      fn(['asm_']m5_mnemonic, [1]dest, [2]target, ^mnemonic, {
-        def(imm, m5_asm_target(21))
+        var(imm, m5_asm_target(21))
         asm_instr_str(J, m5_mnemonic, m5_fn_args)
-        ~(['{']m5_asm_imm_field(m5_imm, 21, 20, 20)[', ']m5_asm_imm_field(m5_imm, 21, 10, 1)[', ']m5_asm_imm_field(m5_imm, 21, 11, 11)[', ']m5_asm_imm_field(m5_imm, 21, 19, 12)[', ']m5_asm_reg(m5_dest)[', ']']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['['}'])
+        /// m5_imm can be a label expression, so it's evaluation must be deferred, making the expressions below a bit messy.
+        ~(['['{']m5_asm_imm_field(']m5_imm[', 21, 20, 20)[', ']m5_asm_imm_field(']m5_imm[', 21, 10, 1)[', ']m5_asm_imm_field(']m5_imm[', 21, 11, 11)[', ']m5_asm_imm_field(']m5_imm[', 21, 19, 12)[', ']'])
+        ~quote(m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instr_, mnemonic, [1]width, [2]ext, [3]op5, {
@@ -269,24 +275,23 @@
   //                 for unsigned, must be in the range 0 .. 2**digits)
   def(unsigned_int_to_fixed_binary, ['m4_ifelse(m4_eval($1 > 1), 1, ['m5_unsigned_int_to_fixed_binary(m4_eval($1-1), m4_eval($2 >> 1))'])['']m4_eval($2 % 2)'])
   def(signed_int_to_fixed_binary, ['m5_unsigned_int_to_fixed_binary(['$1'], m4_ifelse(m4_eval($2 >= 0), 1, ['$2'], ['m4_eval($2 + 2 ** $1)']))'])
-  def(define_label, ['m4_def(label_$1_addr, m5_NUM_INSTRS)'])
+  def(define_label, ['m5_def(label_$1_addr, m5_NUM_INSTRS)'])
   =m4_def(label, m5_defn(define_label))   // Legacy use in m4 assembly code.
-  // m5_label_to_imm(label, bit-width): Convert a label (excluding :) to an immediate for current m5_NUM_INSTRS.
-  def(label_to_imm, ['m5_signed_int_to_fixed_binary($2, m4_ifdef(['m4_label_$1_addr'], ['m4_eval((m4_label_$1_addr - m5_NUM_INSTRS) * 4)'], ['m4_errprint(['No assembler label "']$1['"']m4_nl)0000000000000']))'])
+  // m5_label_to_imm(label, bit-width, num-instrs): Convert a label (excluding :) to an immediate for current m5_NUM_INSTRS.
+  def(label_to_imm, ['m5_signed_int_to_fixed_binary($2, m4_ifdef(['m5_label_$1_addr'], ['m4_eval((m5_label_$1_addr - ['$3']) * 4)'], ['m5_error(['No assembler label "']$1['".'])0000000000000']))'])
   
   // m5_asm_target(width): Output the offset for a given branch target arg in m4_target of the form :label or 1111111111000, with the given bit width.
   fn(asm_target, [1], {
-     ~if_eq(m5_extract_prefix_eval([':'], target), [':'], {
-        // Legacy M4-style label references.
-        ~label_to_imm(m5_target, $1)
-     })
-     ~else_if_def(label_$1_addr, {
-        // True assembler syntax for a label target (with no [':'] prefix).
-        ~label_to_imm(m5_target, $1)
+     ~if_regex(m5_target, ['^:?\([a-zA-Z]\w*\|[0-9]+[fb]\)$'], (target), {
+        // Legacy M4-style label references (starting w/ ":"), or
+        // Named label target.
+        // Note: The label may not have been encountered yet.
+        //       This expression will be evaluated when the memory value is instantiated.
+        ~(['m5_label_to_imm(']m5_target[', $1, ']m5_NUM_INSTRS[')'])
      })
      ~else({
         // Hardcoded binary address.
-        // TODO: Not sure if a real assemble allows anything like this.
+        // TODO: Legacy. Not sure if a real assembler allows anything like this.
         ~target
      })
   })
@@ -299,7 +304,7 @@
   // Extract bits from a binary immediate value.
   // m5_asm_imm_field(binary-imm, imm-length, max-bit, min-bit)
   // E.g. m5_asm_imm_field(101011, 17, 7, 3) => 5'b00101
-  def(asm_imm_field, ['m4_eval($3 - $4 + 1)'b['']m4_substr(m5_asm_zero_ext($1, $2), m4_eval($2 - $3 - 1), m4_eval($3 - $4 + 1))'])
+  def(asm_imm_field, ['m4_eval($3 - $4 + 1)'b['['']m4_substr(m5_asm_zero_ext($1, $2), ']m4_eval($2 - $3 - 1)[', ']m4_eval($3 - $4 + 1)[')']'])
   // Register operand.
   def(asm_reg, ['5'd['']m4_substr(m5_abi_to_reg(['$1']), 1)'])
 
@@ -311,10 +316,9 @@
   // m5_asm(FOO, ...) defines m4_inst# as m5_comma_shiftFOO(...), counts instructions in m5_NUM_INSTRS ,and outputs a comment.
   def(NUM_INSTRS, 0)
   fn(asm, mnemonic, ..., {
-     DEBUG(['asm(']m5_mnemonic['$@)'])
      def(['instr']m5_NUM_INSTRS, m5_call_varargs(['asm_']m5_mnemonic, ['$@']))
-     ~(['/']['/ Inst #']m5_NUM_INSTRS: m5_mnemonic m5_call_varargs(join, [', '], ['$@'])m5_nl)
-     =m4_define(['m5_NUM_INSTRS'], m4_eval(m5_NUM_INSTRS + 1))
+     ~(['/']['/ Inst #']m5_NUM_INSTRS: m5_mnemonic m5_call_varargs(join, [', '], ['$@']))
+     increment(NUM_INSTRS)
   })
   
   //=========
@@ -326,12 +330,24 @@
       ~(m4_ifelse(m5_use_localparams, 0, [''], m4_dquote(m4_riscv_gen_guts())))
    })
    
+   /// Define the mapping of a single CSR.
+   def(_def_csr, ['m5_def(csr_$1_arg, ['$2'])'])
+   
    fn(riscv_gen_guts, [
       // (Output is squashed by caller unless m5_use_localparams.)
       // v---------------------
       // Instruction characterization
 
-      // M4 ugliness for instruction characterization.
+      // CSR Map
+      _def_csr(fflags,             1)
+      _def_csr(frm,               10)
+      _def_csr(fcsr,              11)
+      _def_csr(cycle,   110000000000)
+      _def_csr(time,    110000000001)
+      _def_csr(instret, 110000000010)
+      _def_csr(cycleh,  110010000000)
+      _def_csr(timeh,   110010000001)
+      _def_csr(instreth,110010000010)
 
       // For each opcode[6:2]
       // (User ISA Manual 2.2, Table 19.1)
@@ -431,7 +447,7 @@
       ~instr(I, 32, I, 11100, 001, CSRRW)
       ~instr(I, 32, I, 11100, 010, CSRRS)
       ~instr(I, 32, I, 11100, 011, CSRRC)
-      ~instr(I, 32, I, 11100, 101, CSRRWI)
+      ~instr(I, 32, I, 11100, 101, CSRRWI)   /// TODO: I don't believe these immediate CSR instructions support assembly with an immediate specified in place of rs1.
       ~instr(I, 32, I, 11100, 110, CSRRSI)
       ~instr(I, 32, I, 11100, 111, CSRRCI)
       ~instr(I, 64, I, 00000, 110, LWU)
@@ -682,49 +698,109 @@
       // Pseudoinstructions that are replaced by a single instruction.
       _pseudoinstr(MV, 2, ADDI, #1, #2, 0)
       _pseudoinstr(NOT, 2, XORI, #1, #2, 111111111111)
-      _pseudoinstr(NEG, 2, SUB, #1, x0, #2)
-      _pseudoinstr(NEGW, 2, SUBW, #1, x0, #2)
+      _pseudoinstr(NEG, 2, SUB, #1, zero, #2)
+      _pseudoinstr(NEGW, 2, SUBW, #1, zero, #2)
       _pseudoinstr(SEXT_W, 2, ADDIW, #1, #2, 0)
       _pseudoinstr(ZEXT_B, 2, ANDI, #1, #2, 11111111)
       _pseudoinstr(SEQZ, 2, SLTIU, #1, #2, 1)
-      _pseudoinstr(SNEZ, 2, SLTU, #1, x0, #2)
-      _pseudoinstr(SLTZ, 2, SLT, #1, #2, x0)
-      _pseudoinstr(SGTZ, 2, SLT, #1, x0, #2)
+      _pseudoinstr(SNEZ, 2, SLTU, #1, zero, #2)
+      _pseudoinstr(SLTZ, 2, SLT, #1, #2, zero)
+      _pseudoinstr(SGTZ, 2, SLT, #1, zero, #2)
       _pseudoinstr(FMV_S, 2, FSGNJ_S, #1, #2, #2)
       _pseudoinstr(FABS_S, 2, FSGNJX_S, #1, #2, #2)
       _pseudoinstr(FNEG_S, 2, FSGNJN_S, #1, #2, #2)
       _pseudoinstr(FMV_D, 2, FSGNJ_D, #1, #2, #2)
       _pseudoinstr(FABS_D, 2, FSGNJX_D, #1, #2, #2)
       _pseudoinstr(FNEG_D, 2, FSGNJN_D, #1, #2, #2)
-      _pseudoinstr(BEQZ, 2, BEQ, #1, x0, #2)
-      _pseudoinstr(BNEZ, 2, BNE, #1, x0, #2)
-      _pseudoinstr(BLEZ, 2, BGE, x0, #1, #2)
-      _pseudoinstr(BGEZ, 2, BGE, #1, x0, #2)
-      _pseudoinstr(BLTZ, 2, BLT, #1, x0, #2)
-      _pseudoinstr(BGTZ, 2, BLT, x0, #1, #2)
+      _pseudoinstr(BEQZ, 2, BEQ, #1, zero, #2)
+      _pseudoinstr(BNEZ, 2, BNE, #1, zero, #2)
+      _pseudoinstr(BLEZ, 2, BGE, zero, #1, #2)
+      _pseudoinstr(BGEZ, 2, BGE, #1, zero, #2)
+      _pseudoinstr(BLTZ, 2, BLT, #1, zero, #2)
+      _pseudoinstr(BGTZ, 2, BLT, zero, #1, #2)
       _pseudoinstr(BGT, 3, BLT, #2, #1, #3)
       _pseudoinstr(BLE, 3, BGE, #2, #1, #3)
       _pseudoinstr(BGTU, 3, BLTU, #2, #1, #3)
       _pseudoinstr(BLEU, 3, BGEU, #2, #1, #3)
-      _pseudoinstr(J, 1, JAL, x0, #1)
-      _pseudoinstr(JR, 1, JALR, x0, #1, 0)
-      _pseudoinstr(RET, 0, JALR, x0, x1, 0)
-      // Note: Some didn't fit the mold:
+      _pseudoinstr(J, 1, JAL, zero, #1)
+      _pseudoinstr(JR, 1, JALR, zero, 0(#1))
+      _pseudoinstr(RET, 0, JALR, zero, 0(ra))
+      _pseudoinstr(RDINSTRET, 1, CSRRS, #1, instret, zero)   /// TODO: Fix instret and other CSR use below.
+      _pseudoinstr(RDINSTRETH, 1, CSRRS, #1, instreth, zero)
+      _pseudoinstr(RDCYCLE, 1, CSRRS, #1, cycle, zero)
+      _pseudoinstr(RDCYCLEH, 1, CSRRS, #1, cycleh, zero)
+      _pseudoinstr(RDTIME, 1, CSRRS, #1, time, zero)
+      _pseudoinstr(RDTIMEH, 1, CSRRS, #1, timeh, zero)
+      _pseudoinstr(CSRR, 2, CSRRS, #1, #2, zero)
+      _pseudoinstr(CSRW, 2, CSRRW, zero, #1, #2)
+      _pseudoinstr(CSRS, 2, CSRRS, zero, #1, #2)
+      _pseudoinstr(CSRC, 2, CSRRC, zero, #1, #2)
+      _pseudoinstr(CSRWI, 2, CSRRWI, zero, #1, #2)
+      _pseudoinstr(CSRSI, 2, CSRRSI, zero, #1, #2)
+      _pseudoinstr(CSRCI, 2, CSRRCI, zero, #1, #2)
+      _pseudoinstr(FRCSR, 1, CSRRS, #1, fcsr, zero)
+      _pseudoinstr(FSCSR, 2, CSRRW, #1, fcsr, #2)
+      //_pseudoinstr(FSCSR, 1, CSRRW, zero, fcsr, #1)  /// TODO: 1-operand version of the line above. Support this.
+      _pseudoinstr(FRRM, 1, CSRRS, #1, frm, zero)
+      _pseudoinstr(FSRM, 2, CSRRW, #1, frm, #2)
+      //_pseudoinstr(FSRM, 1, CSRRW, zero, frm, #1)
+      _pseudoinstr(FSRMI, 2, CSRRWI, #1, frm, #2)
+      //_pseudoinstr(FSRMI, 1, CSRRWI, zero, frm, #1)
+      _pseudoinstr(FRFLAGS, 1, CSRRS, #1, fflags, zero)
+      _pseudoinstr(FSFLAGS, 2, CSRRW, #1, fflags, #2)
+      //_pseudoinstr(FSFLAGS, 1, CSRRW, zero, fflags, #1)
+      _pseudoinstr(FSFLAGSI, 2, CSRRWI, #1, fflags, #2)
+      //_pseudoinstr(FSFLAGSI, 1, CSRRWI, zero, fflags, #1)
+      // TODO: Some didn't fit the mold:
       // Many translate to multiple instructions.
       // Some accept a subset of args.
-      //   jal offset	=> jal x1, offset
-      //   jalr rs =>	jalr x1, rs, 0
+      //   jal offset	=> jal ra, offset
+      //   jalr rs =>	jalr ra, rs, 0
       //   fence =>	fence iorw, iorw
-      DEBUG(MV: m5_defn(_pseudoinstr_RET))
+      /**
+      _exp_pseudoinstr(LA)
+      _exp_pseudoinstr(LLA)
+      _exp_pseudoinstr(LGA)
+      _exp_pseudoinstr(LB)
+      _exp_pseudoinstr(LH)
+      _exp_pseudoinstr(LW)
+      _exp_pseudoinstr(LD)
+      _exp_pseudoinstr(SB)
+      _exp_pseudoinstr(SH)
+      _exp_pseudoinstr(SW)
+      _exp_pseudoinstr(SD)
+      _exp_pseudoinstr(FLW)
+      _exp_pseudoinstr(FLD)
+      _exp_pseudoinstr(FSW)
+      _exp_pseudoinstr(FSD)
+      _exp_pseudoinstr(LI)
+      _exp_pseudoinstr(SEXT_B)
+      _exp_pseudoinstr(SEXT_H)
+      _exp_pseudoinstr(ZEXT_H)
+      _exp_pseudoinstr(ZEXT_W)
+      _exp_pseudoinstr(CALL)
+      _exp_pseudoinstr(TAIL)
+      _exp_pseudoinstr()
+      _exp_pseudoinstr()
+      _exp_pseudoinstr()
+      _exp_pseudoinstr()
+      _exp_pseudoinstr()
+      **/
    ])
    
    
    // Create macro _pseudoinstr(<mnemonic>, <num-pseudoinstr-args>, <actual-instr>, <actual-arg-1>, <actual-arg-2>, ...)
-   // Actual arg may be, e.g. #2 to represent the second argument of the pseudoinstruction.
+   // Actual arg may contain, e.g. #2 to represent the second argument of the pseudoinstruction.
    // E.g. _pseudoinstr(MV, 2, ADDI, #1, #2, 0)
-   // Results in the evaluation of: m5_if_def(instr_defined_ADDI, ['m5_def(['_pseudoinstr_MV'], ['m5_verify_num_args(['MV'], ['2'], ['$#'])m5_set(mnemonic, ['ADDI'])m5_set(fields, ']']XXX['[')'])']), where XXX evaluates to ['['$1, $2, 0']']. (Note that args are unquoted.)
-   // TODO: m5_def used below instead of m5_macro. Macro goes out of scope, but not sure where.
-   macro(_pseudoinstr, ['m5_if_def(instr_defined_$3, ['m5_def(['_pseudoinstr_$1'], ['m5_verify_num_args(['$1'], ['$2'], ']m5_quote(['$']['#'])[')m5_set(mnemonic, ['$3'])m5_set(fields, ']']m5_nquote(2, m5_call(_pseudoinstr_args, ['']m5_comma_shift(m5_shift(m5_shift($@)))))['[')'])'])'])
+   // TODO: This would be cleaner using fn's at both levels and ^ in the inner fn.
+   macro(_pseudoinstr, [
+      if_def(instr_defined_$3, [   /// This conditions the pseudo-instruction on support for the same extension as the instruction it maps to.
+         def(['_pseudoinstr_$1'], [
+            verify_num_args(['$1'], ['$2'], ']m5_quote(['$']['#'])[')
+            ~call(assemble_instr, ['$3'], ']']m5_nquote(2, m5_call(_pseudoinstr_args, ['']m5_comma_shift(m5_shift(m5_shift($@)))))['[')
+         ])
+      ])
+   ])
    // For m5_pseudoinstr, turn the actual-instruction argument list into <args> for m5_asm(<instr>, <args>).
    // E.g.: m5_pseudoinstr_args([''], #1, #2, 0) => ['$1'],['$2'],['0']
    fn(_pseudoinstr_args,
@@ -732,10 +808,10 @@
       ...: ['actual-instruction args from _pseudoinstr'],
    {
       ~comma
-      var_regex(['$1'], ['^\(#\)\(.*\)'], (pound, num))
+      var_regex(['$1'], ['^\(.*\)#\([0-9]\)\(.*\)'], (pre, num, post))
       ~if_so([
          // "#" arg
-         ~(['$']m5_num)
+         ~(m5_pre['$']m5_num['']m5_post)
       ])
       ~else([
          // Use the arg literally.
@@ -850,8 +926,56 @@
    // Assemble
    // --------
    
+   // Assemble a real instruction (not a pseudoinstruction).
+   fn(assemble_instr, mnemonic, fields, {
+      macro(bad, ['m5_error(['Malformed instruction: ']m5_mnemonic[''](m5_fields))'])
+      
+      ///DEBUG(['Found instruction: ']m5_mnemonic[''](m5_fields))
+      
+      // Parse format based on instruction characteristics.
+      
+      var(op5, m5_eval(['m5_op5_of_instr_']m5_mnemonic))
+      ~if(m5_eq(m5_op5, m5_op5_named_LOAD) ||
+         m5_eq(m5_op5, m5_op5_named_LOAD_FP) ||
+         m5_eq(m5_op5, m5_op5_named_STORE) ||
+         m5_eq(m5_op5, m5_op5_named_STORE_FP) ||
+         m5_eq(m5_mnemonic, JALR),
+      [
+         // Format should be, e.g. LB a0, 0(a2)
+         var_regex(m5_fields, ['^\(\w+\),\s*\(\w+\)(\(\w+\))$'], (r1, imm, r2))
+         ~if_so([
+            ~asm(m5_mnemonic, m5_r1, m5_r2, m5_imm)
+         ])
+         else(['m5_bad()'])
+      ])
+      ~else_if_regex(m5_mnemonic, ['^\(CSR\)'], (dummy), [
+         ///DEBUG(['CSR instruction: ']m5_mnemonic[''](m5_fields))
+         /// CSR instruction.
+         /// CSR instructions take a CSR as the immediate, and for some reason, the operands are in a different order.
+         /// Decode the CSR.
+         fn(process_fields, rd, csr, rs, {
+            var(csr_arg, m5_if_def(['csr_']m5_csr['_arg'], ['m5_csr_']m5_csr['_arg'], ['m5_csr']))
+            ~asm(m5_mnemonic, m5_rd, m5_rs, m5_csr_arg)
+         })
+         ~process_fields(m5_eval(m5_fields))
+      ])
+      ~else([
+         ///DEBUG(['Typical instruction: ']m5_mnemonic[''](m5_fields))
+         /// Format, any number of comma-separated fields: e.g. ADDI t0, t2, 1
+         if_neq(m5_fields, [''], [
+            set(fields, [', ']m5_fields)
+         ])
+         var_regex(m5_fields, ['^\(,\s*\w+\)*$'], (dummy))
+         ~if_so([
+            ~asm(m5_mnemonic['']m5_eval(m5_fields))
+         ])
+         else(['m5_bad()'])
+      ])
+      ~nl
+   })
+   
    fn(assemble_line, line_cnt, line, {
-      DEBUG(Assembling line m5_line_cnt: m5_line)
+      //DEBUG(Assembling line m5_line_cnt: m5_line)
       // Strip comment and trailing whitespace from m5_line.
       var(pos, m5_index_of(m5_line, ['#']))
       if(m5_pos >= 0, [
@@ -866,7 +990,7 @@
          // Empty line
          //
          
-         DEBUG(['Found empty line.'])
+         //DEBUG(['Found empty line.'])
       
       }, ['^\s+\(\w+\)\s*\(.*\)'], (mnemonic, fields), {
          
@@ -874,49 +998,26 @@
          // Instruction
          //
          
-         macro(bad, ['m5_error(['Malformed instruction: ']m5_line)'])
-         
-         DEBUG(['Found instruction: ']m5_mnemonic m5_fields)
-         
          // Convert given mnemonic to internal mnemonic, e.g. sext.b -> SEXT_B
          set(mnemonic, m5_translit(m5_uppercase(m5_mnemonic), ['.'], ['_']))
-         
-         // Map simple pseudoinstructions.
-         //
-         if_def(['_pseudoinstr_']m5_mnemonic, [
-            DEBUG(PSEUDOINSTR: m5_mnemonic['(']m5_fields[')'])
-            // This is a pseudoinstruction.
-            //inline(['m5__pseudoinstr_']m5_mnemonic)(m5_fields)
-            call(['_pseudoinstr_']m5_mnemonic['']m5_if_eq(m5_defn(fields), ['['']'], [''], [',m5_eval(m5_fields)']))
-            DEBUG(BECAME INSTR: m5_mnemonic['(']m5_fields[')'])
+      
+         if_def(['_expanding_pseudoinstr_']m5_mnemonic, [
+            /// Pseudoinstruction that expands to multiple instructions.
+            error(['This pseudoinstruction is not yet supported.'])
          ])
-         
-         
-         // Parse format based on instruction characteristics.
-         
-         var(op5, m5_eval(['op5_of_instr_']m5_mnemonic))
-         ~if(m5_eq(m5_op5, m5_op5_named_LOAD) ||
-            m5_eq(m5_op5, m5_op5_named_LOAD_FP) ||
-            m5_eq(m5_op5, m5_op5_named_STORE) ||
-            m5_eq(m5_op5, m5_op5_named_STORE_FP),
-         [
-            // Format should be, e.g. LB a0, 0(a2)
-            var_regex(m5_fields, ['^\(\w+\),\s*\(\w+\)(\(\w+\))$'], (r1, imm, r2))
-            ~if_so([
-               ~asm(m5_mnemonic, r1, r2, imm)
-            ])
-            else(['m5_bad()'])
+         ~else_if_def(['_pseudoinstr_']m5_mnemonic, [
+            /// Simple pseudoinstructions.
+            ///DEBUG(PSEUDOINSTR: m5_mnemonic['(']m5_fields[')'])
+            /// TODO: Why doesn't the line below work?
+            ///inline(['m5__pseudoinstr_']m5_mnemonic)(m5_fields)
+            ~call(['_pseudoinstr_']m5_mnemonic['']m5_if_eq(m5_defn(fields), ['['']'], [''], [',m5_eval(m5_fields)']))
+            ///DEBUG(BECAME INSTR: m5_mnemonic['(']m5_fields[')'])
+            /// TODO: Have _pseudoinstr_XX do this instead of setting mnemonic & fields.
+            //~assemble_instr(m5_mnemonic, m5_fields)
          ])
          ~else([
-            // Format, any number of comma-separated fields: e.g. ADDI t0, t2, 1
-            if_neq(m5_fields, [''], [
-               set(fields, [', ']m5_fields)
-            ])
-            var_regex(m5_fields, ['^\(,\s*\w+\)*$'], (dummy))
-            ~if_so([
-               ~asm(m5_mnemonic['']m5_eval(m5_fields))
-            ])
-            else(['m5_bad()'])
+            // Instruction (not a pseudoinstruction)
+            ~assemble_instr(m5_mnemonic, m5_fields)
          ])
          
       }, ['^\.\(\w+\)\(\)?'], (directive, fields), {
@@ -925,7 +1026,7 @@
          // Directive
          //
          
-         DEBUG(['Found directive: ']m5_directive m5_fields)
+         ///DEBUG(['Found directive: ']m5_directive m5_fields)
       
       }, ['^\(\w+\):\s*$'], (label), {
          
@@ -933,7 +1034,7 @@
          // Label
          //
          
-         DEBUG(['Found label: ']m5_label)
+         ///DEBUG(['Found label: ']m5_label)
          define_label(m5_label)
       
       }, {
@@ -942,7 +1043,9 @@
    })
    
    // Assemble a block of assembly code.
+   // The first line defines the indentation of the code, and indentation is removed before processing.
    fn(assemble, code, {
+      set(code, m5_remove_indentation(m5_code))
       var(assemble__cnt, 0)
       ~for_each_line(m5_code, [
          ~assemble_line(m5_assemble__cnt, m5_line)
