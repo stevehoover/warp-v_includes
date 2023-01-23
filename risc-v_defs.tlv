@@ -101,7 +101,7 @@
   // m5_asm_<MNEMONIC> output for funct3 or rm, returned in unquoted context so arg references can be produced. 'rm' is always the last m5_asm_<MNEMONIC> arg (m4_arg(#)).
   //   Args: $1: MNEMONIC, $2: funct3 field of instruction definition (or 'rm')
   // TODO: Remove "new_" from name below.
-  macro(asm_funct3, ['['m4_ifelse($2, ['rm'], ['3'b']m5_rm, m5_localparam_value(['$1_INSTR_FUNCT3']))']'])
+  macro(asm_funct3, ['['m4_ifelse($2, ['rm'], ['3'b']']m5_rm[', m5_localparam_value(['$1_INSTR_FUNCT3']))']'])
   
   // Opcode + funct3 + funct7 (R-type, R2-type). $@ as for m4_instrX(..), $7: MNEMONIC, $8: number of bits of leading bits of funct7 to interpret. If 5, for example, use the term funct5, $9: (opt) for R2, the r2 value.
   macro(instr_funct7,
@@ -131,7 +131,7 @@
   // Extends the following definitions to reflect the given instruction <mnemonic>:
   def(['# instructiton decode: $is_<mnemonic>_instr = ...; ...'],
       decode_expr, [''],
-      ['# result combining expr.: ({32{$is_<mnemonic>_instr}} & $<mnemonic>_rslt) | ...'],
+      ['# result combining expr.: ({32{$is_[mnemonic]_instr}} & $[mnemonic]_rslt) | ...'],
       rslt_mux_expr, [''],
       ['# $illegal instruction exception expr: && ! $is_<mnemonic>_instr ...'],
       illegal_instr_expr, [''],
@@ -182,6 +182,7 @@
      ~instr_funct3($@)
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]imm, ^funct3, ^mnemonic, {
         asm_instr_str(I, m5_mnemonic, m5_fn_args)
+        set(imm, m5_immediate_field_to_bits(12, m5_imm))
         ~quote(['{12'b']m5_imm[', ']m5_asm_reg(m5_src1)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT3'])[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
@@ -217,6 +218,7 @@
      ~instr_funct3($@, ['no_dest'])
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]imm, ^funct3, ^mnemonic, {
         asm_instr_str(S, m5_mnemonic, m5_fn_args)
+        set(imm, m5_immediate_field_to_bits(12, m5_imm))
         ~quote(['{']m5_asm_imm_field(m5_imm, 12, 11, 5)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_reg(m5_dest)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_imm_field(m5_imm, 12, 4, 0)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
@@ -236,6 +238,7 @@
      ~instr_no_func(m5_mnemonic, m5_op5)
      fn(['asm_']m5_mnemonic, [1]dest, [2]imm, ^mnemonic, {
         asm_instr_str(U, m5_mnemonic, m5_fn_args)
+        set(imm, m5_immediate_field_to_bits(20, m5_imm))
         ~quote(['{']m5_asm_imm_field(m5_imm, 20, 19, 0)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
@@ -271,8 +274,8 @@
   // Returns a string of 0s and 1s, representing the zero-padded binary value.
   // Args:
   //   digits: number of binary digits
-  //   value: value (for signed, must be in the range -2**digits .. 2**digits-1,
-  //                 for unsigned, must be in the range 0 .. 2**digits)
+  //   value: value (for signed, must be in the range -2**digits .. 2**digits-1 (and thus it works for unsigned as well),
+  //                 for unsigned, must be in the range 0 .. 2**digits-1)
   def(unsigned_int_to_fixed_binary, ['m4_ifelse(m4_eval($1 > 1), 1, ['m5_unsigned_int_to_fixed_binary(m4_eval($1-1), m4_eval($2 >> 1))'])['']m4_eval($2 % 2)'])
   def(signed_int_to_fixed_binary, ['m5_unsigned_int_to_fixed_binary(['$1'], m4_ifelse(m4_eval($2 >= 0), 1, ['$2'], ['m4_eval($2 + 2 ** $1)']))'])
   def(define_label, ['m5_def(label_$1_addr, m5_NUM_INSTRS)'])
@@ -282,19 +285,49 @@
   
   // m5_asm_target(width): Output the offset for a given branch target arg in m4_target of the form :label or 1111111111000, with the given bit width.
   fn(asm_target, [1], {
-     ~if_regex(m5_target, ['^:?\([a-zA-Z]\w*\|[0-9]+[fb]\)$'], (target), {
+     ~if_regex(m5_target, ['^:?\([a-zA-Z]\w*\|[0-9]+[fb]\)$'], (target), [
         // Legacy M4-style label references (starting w/ ":"), or
         // Named label target.
         // Note: The label may not have been encountered yet.
         //       This expression will be evaluated when the memory value is instantiated.
         ~(['m5_label_to_imm(']m5_target[', $1, ']m5_NUM_INSTRS[')'])
-     })
-     ~else({
-        // Hardcoded binary address.
-        // TODO: Legacy. Not sure if a real assembler allows anything like this.
-        ~target
-     })
+     ])
+     ~else([
+        ~immediate_field_to_bits(['$1'], m5_imm)
+     ])
   })
+  
+  /// Compute binary negative, given a string of 0/1 starting w/ the sign bit.
+  fn(_asm_binary_negative, bin, {
+     /// Flip all the bits and add one.
+     /// Actually, adding one is flipping LSBs that match 0?1*, so just flip bits prior to 1?0*.
+     var_regex(m5_bin, ['\(1?0*\)$'], (lsbs))
+     ~translit(m5_substr_eval(m5_bin, 0, m5_calc(m5_length(m5_bin) - m5_length(m5_lsbs))), ['01'], ['10'])  /// Flipped bits
+     ~substr_eval(m5_bin, m5_calc(m5_length(m5_bin) - m5_length(m5_lsbs)))  /// Non-flipped lsbs.
+  })
+  
+  fn(immediate_field_to_bits, num_bits, field, {
+     ///DEBUG(immediate_field_to_bits(m5_num_bits, m5_field))
+     // TODO: Support 0x, 0b, and decimal. ... I can't find a spec.
+     ~if_regex(m5_field, ['^\(-?\)0x\([0-9a-fA-F]+\)$'], (sign, hex), [
+        ~signed_int_to_fixed_binary(m5_num_bits, m5_sign['']m5_hex_to_int(m5_hex))
+     ], ['^\(-?\)0b\([10]+\)$'], (sign, bin), [
+        ~if_eq(sign, -, [
+           /// Negative
+           set(tmp, binary_negative(m5_asm_zero_ext(m5_bin, m5_num_bits)))
+           ~tmp
+        ], [
+           /// Positive
+           ~bin
+        ])
+     ], ['^\(-?[0-9]+\)$'], (number), [
+        ~signed_int_to_fixed_binary(m5_num_bits, m5_number)
+     ], [
+        error(Bad syntax for immediate field: "m5_field".)
+        ~field
+     ])
+  })
+
   
 
   // An 20-bit immediate binary zero string.
@@ -480,76 +513,76 @@
       ~instr(R, 64, M, 01110, 111, 0000001, REMUW)
       ~instr(I, 32, F, 00001, 010, FLW)
       ~instr(S, 32, F, 01001, 010, FSW)
-      ~instr(R4, 32, F, 10000, rm, 00, FMADDS)
-      ~instr(R4, 32, F, 10001, rm, 00, FMSUBS)
-      ~instr(R4, 32, F, 10010, rm, 00, FNMSUBS)
-      ~instr(R4, 32, F, 10011, rm, 00, FNMADDS)
+      ~instr(R4, 32, F, 10000, rm, 00, FMADD_S)
+      ~instr(R4, 32, F, 10001, rm, 00, FMSUB_S)
+      ~instr(R4, 32, F, 10010, rm, 00, FNMSUB_S)
+      ~instr(R4, 32, F, 10011, rm, 00, FNMADD_S)
       ~instr(R, 32, F, 10100, rm, 0000000, FADD_S)
       ~instr(R, 32, F, 10100, rm, 0000100, FSUB_S)
-      ~instr(R, 32, F, 10100, rm, 0001000, FMULS)
-      ~instr(R, 32, F, 10100, rm, 0001100, FDIVS)
-      ~instr(R2, 32, F, 10100, rm, 0101100, 00000, FSQRTS)
-      ~instr(R, 32, F, 10100, 000, 0010000, FSGNJS)
-      ~instr(R, 32, F, 10100, 001, 0010000, FSGNJNS)
-      ~instr(R, 32, F, 10100, 010, 0010000, FSGNJXS)
-      ~instr(R, 32, F, 10100, 000, 0010100, FMINS)
-      ~instr(R, 32, F, 10100, 001, 0010100, FMAXS)
-      ~instr(R2, 32, F, 10100, rm, 1100000, 00000, FCVTWS)
-      ~instr(R2, 32, F, 10100, rm, 1100000, 00001, FCVTWUS)
-      ~instr(R2, 32, F, 10100, 000, 1110000, 00000, FMVXW)
-      ~instr(R, 32, F, 10100, 010, 1010000, FEQS)
-      ~instr(R, 32, F, 10100, 001, 1010000, FLTS)
-      ~instr(R, 32, F, 10100, 000, 1010000, FLES)
-      ~instr(R2, 32, F, 10100, 001, 1110000, 00000, FCLASSS)
-      ~instr(R2, 32, F, 10100, rm, 1101000, 00000, FCVTSW)
-      ~instr(R2, 32, F, 10100, rm, 1101000, 00001, FCVTSWU)
-      ~instr(R2, 32, F, 10100, 000, 1111000, 00000, FMVWX)
-      ~instr(R2, 64, F, 10100, rm, 1100000, 00010, FCVTLS)
-      ~instr(R2, 64, F, 10100, rm, 1100000, 00011, FCVTLUS)
-      ~instr(R2, 64, F, 10100, rm, 1101000, 00010, FCVTSL)
-      ~instr(R2, 64, F, 10100, rm, 1101000, 00011, FCVTSLU)
+      ~instr(R, 32, F, 10100, rm, 0001000, FMUL_S)
+      ~instr(R, 32, F, 10100, rm, 0001100, FDIV_S)
+      ~instr(R2, 32, F, 10100, rm, 0101100, 00000, FSQRT_S)
+      ~instr(R, 32, F, 10100, 000, 0010000, FSGNJ_S)
+      ~instr(R, 32, F, 10100, 001, 0010000, FSGNJN_S)
+      ~instr(R, 32, F, 10100, 010, 0010000, FSGNJX_S)
+      ~instr(R, 32, F, 10100, 000, 0010100, FMIN_S)
+      ~instr(R, 32, F, 10100, 001, 0010100, FMAX_S)
+      ~instr(R2, 32, F, 10100, rm, 1100000, 00000, FCVT_W_S)
+      ~instr(R2, 32, F, 10100, rm, 1100000, 00001, FCVT_WU_S)
+      ~instr(R2, 32, F, 10100, 000, 1110000, 00000, FMV_X_W)
+      ~instr(R, 32, F, 10100, 010, 1010000, FEQ_S)
+      ~instr(R, 32, F, 10100, 001, 1010000, FLT_S)
+      ~instr(R, 32, F, 10100, 000, 1010000, FLE_S)
+      ~instr(R2, 32, F, 10100, 001, 1110000, 00000, FCLASS_S)
+      ~instr(R2, 32, F, 10100, rm, 1101000, 00000, FCVT_S_W)
+      ~instr(R2, 32, F, 10100, rm, 1101000, 00001, FCVT_S_WU)
+      ~instr(R2, 32, F, 10100, 000, 1111000, 00000, FMV_W_X)
+      ~instr(R2, 64, F, 10100, rm, 1100000, 00010, FCVT_L_S)
+      ~instr(R2, 64, F, 10100, rm, 1100000, 00011, FCVT_LU_S)
+      ~instr(R2, 64, F, 10100, rm, 1101000, 00010, FCVT_S_L)
+      ~instr(R2, 64, F, 10100, rm, 1101000, 00011, FCVT_S_LU)
       ~instr(I, 32, D, 00001, 011, FLD)
       ~instr(S, 32, D, 01001, 011, FSD)
-      ~instr(R4, 32, D, 10000, rm, 01, FMADDD)
-      ~instr(R4, 32, D, 10001, rm, 01, FMSUBD)
-      ~instr(R4, 32, D, 10010, rm, 01, FNMSUBD)
-      ~instr(R4, 32, D, 10011, rm, 01, FNMADDD)
+      ~instr(R4, 32, D, 10000, rm, 01, FMADD_D)
+      ~instr(R4, 32, D, 10001, rm, 01, FMSUB_D)
+      ~instr(R4, 32, D, 10010, rm, 01, FNMSUB_D)
+      ~instr(R4, 32, D, 10011, rm, 01, FNMADD_D)
       ~instr(R, 32, D, 10100, rm, 0000001, FADD_D)
       ~instr(R, 32, D, 10100, rm, 0000101, FSUB_D)
       ~instr(R, 32, D, 10100, rm, 0001001, FMUL_D)
-      ~instr(R, 32, D, 10100, rm, 0001101, FDIVD)
-      ~instr(R2, 32, D, 10100, rm, 0101101, 00000, FSQRTD)
-      ~instr(R, 32, D, 10100, 000, 0010001, FSGNJD)
-      ~instr(R, 32, D, 10100, 001, 0010001, FSGNJND)
-      ~instr(R, 32, D, 10100, 010, 0010001, FSGNJXD)
-      ~instr(R, 32, D, 10100, 000, 0010101, FMIND)
-      ~instr(R, 32, D, 10100, 001, 0010101, FMAXD)
-      ~instr(R2, 32, D, 10100, rm, 0100000, 00001, FCVTSD)
-      ~instr(R2, 32, D, 10100, rm, 0100001, 00000, FCVTDS)
-      ~instr(R, 32, D, 10100, 010, 1010001, FEQD)
-      ~instr(R, 32, D, 10100, 001, 1010001, FLTD)
-      ~instr(R, 32, D, 10100, 000, 1010001, FLED)
-      ~instr(R2, 32, D, 10100, 001, 1110001, 00000, FCLASSD)
-      ~instr(R2, 32, D, 10100, rm, 1110001, 00000, FCVTWD)
-      ~instr(R2, 32, D, 10100, rm, 1100001, 00001, FCVTWUD)
-      ~instr(R2, 32, D, 10100, rm, 1101001, 00000, FCVTDW)
-      ~instr(R2, 32, D, 10100, rm, 1101001, 00001, FCVTDWU)
-      ~instr(R2, 64, D, 10100, rm, 1100001, 00010, FCVTLD)
-      ~instr(R2, 64, D, 10100, rm, 1100001, 00011, FCVTLUD)
-      ~instr(R2, 64, D, 10100, 000, 1110001, 00000, FMVXD)
-      ~instr(R2, 64, D, 10100, rm, 1101001, 00010, FCVTDL)
-      ~instr(R2, 64, D, 10100, rm, 1101001, 00011, FCVTDLU)
-      ~instr(R2, 64, D, 10100, 000, 1111001, 00000, FMVDX)
+      ~instr(R, 32, D, 10100, rm, 0001101, FDIV_D)
+      ~instr(R2, 32, D, 10100, rm, 0101101, 00000, FSQRT_D)
+      ~instr(R, 32, D, 10100, 000, 0010001, FSGNJN_D)
+      ~instr(R, 32, D, 10100, 001, 0010001, FSGNJN_D)
+      ~instr(R, 32, D, 10100, 010, 0010001, FSGNJX_D)
+      ~instr(R, 32, D, 10100, 000, 0010101, FMIN_D)
+      ~instr(R, 32, D, 10100, 001, 0010101, FMAX_D)
+      ~instr(R2, 32, D, 10100, rm, 0100000, 00001, FCVT_S_D)
+      ~instr(R2, 32, D, 10100, rm, 0100001, 00000, FCVT_D_S)
+      ~instr(R, 32, D, 10100, 010, 1010001, FEQ_D)
+      ~instr(R, 32, D, 10100, 001, 1010001, FLT_D)
+      ~instr(R, 32, D, 10100, 000, 1010001, FLE_D)
+      ~instr(R2, 32, D, 10100, 001, 1110001, 00000, FCLASS_D)
+      ~instr(R2, 32, D, 10100, rm, 1110001, 00000, FCVT_W_D)
+      ~instr(R2, 32, D, 10100, rm, 1100001, 00001, FCVT_WU_D)
+      ~instr(R2, 32, D, 10100, rm, 1101001, 00000, FCVT_D_W)
+      ~instr(R2, 32, D, 10100, rm, 1101001, 00001, FCVT_D_WU)
+      ~instr(R2, 64, D, 10100, rm, 1100001, 00010, FCVT_L_D)
+      ~instr(R2, 64, D, 10100, rm, 1100001, 00011, FCVT_LU_D)
+      ~instr(R2, 64, D, 10100, 000, 1110001, 00000, FMV_X_D)
+      ~instr(R2, 64, D, 10100, rm, 1101001, 00010, FCVT_D_L)
+      ~instr(R2, 64, D, 10100, rm, 1101001, 00011, FCVT_D_LU)
+      ~instr(R2, 64, D, 10100, 000, 1111001, 00000, FMV_D_X)
       ~instr(I, 32, Q, 00001, 100, FLQ)
       ~instr(S, 32, Q, 01001, 100, FSQ)
-      ~instr(R4, 32, Q, 10000, rm, 11, FMADDQ)
-      ~instr(R4, 32, Q, 10001, rm, 11, FMSUBQ)
-      ~instr(R4, 32, Q, 10010, rm, 11, FNMSUBQ)
-      ~instr(R4, 32, Q, 10011, rm, 11, FNMADDQ)
+      ~instr(R4, 32, Q, 10000, rm, 11, FMADD_Q)
+      ~instr(R4, 32, Q, 10001, rm, 11, FMSUB_Q)
+      ~instr(R4, 32, Q, 10010, rm, 11, FNMSUB_Q)
+      ~instr(R4, 32, Q, 10011, rm, 11, FNMADD_Q)
       ~instr(R, 32, Q, 10100, rm, 0000011, FADD_Q)
       ~instr(R, 32, Q, 10100, rm, 0000111, FSUB_Q)
       ~instr(R, 32, Q, 10100, rm, 0001011, FMUL_Q)
-      ~instr(R, 32, Q, 10100, rm, 0001111, FDIVQ)
+      ~instr(R, 32, Q, 10100, rm, 0001111, FDIV_Q)
       ~instr(R2, 32, Q, 10100, rm, 0101111, 00000, FSQRT_Q)
       ~instr(R, 32, Q, 10100, 000, 0010011, FSGNJ_Q)
       ~instr(R, 32, Q, 10100, 001, 0010011, FSGNJN_Q)
@@ -883,7 +916,7 @@
    fn(_map_abi_name, abi_name, type, index, [
       ///DEBUG(['Defining: "']m5_abi_name['" = ']m5_type['']m5_index['.'])
       var(_REG_OF_ABI_NAME_['']m5_uppercase(m5_abi_name), m5_type['']m5_index)
-      var(_ABI_NAME_OF_['']m5_uppercase(m5_type)['']m5_index, m5_uppercase(m5_abi_name))
+      var(_ABI_NAME_OF_['']m5_uppercase(m5_type)['']m5_index, m5_lowercase(m5_abi_name))
    ])
    /// Define X/F registers, given a list of ABI names.
    fn(_map_abi_names, type, ..., [
@@ -942,7 +975,7 @@
          m5_eq(m5_mnemonic, JALR),
       [
          // Format should be, e.g. LB a0, 0(a2)
-         var_regex(m5_fields, ['^\(\w+\),\s*\(\w+\)(\(\w+\))$'], (r1, imm, r2))
+         var_regex(m5_fields, ['^\(\w+\),\s*\(-?\w+\)(\(\w+\))$'], (r1, imm, r2))
          ~if_so([
             ~asm(m5_mnemonic, m5_r1, m5_r2, m5_imm)
          ])
