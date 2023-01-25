@@ -1078,7 +1078,7 @@
    // Assemble a block of assembly code.
    // The first line defines the indentation of the code, and indentation is removed before processing.
    fn(assemble, code, {
-      set(code, m5_remove_indentation(m5_code))
+      set(code, m5_code)
       var(assemble__cnt, 0)
       ~for_each_line(m5_code, [
          ~assemble_line(m5_assemble__cnt, m5_line)
