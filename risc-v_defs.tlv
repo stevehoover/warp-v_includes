@@ -56,7 +56,7 @@
   // Each instruction is defined by instantiating m5_instr(...), e.g.: 
   //    m5_instr(B, 32, I, 11000, 000, BEQ)
   // which instantiates an instruction-type-specific macro, e.g.:
-  //    m4_instrB(32, I, 11000, 000, BEQ)
+  //    m5_instrB(32, I, 11000, 000, BEQ)
   // which produces (or defines macros for):
   //   o instruction decode logic ($is_<mnemonic>_instr = ...;)
   //   o for debug, an expression to produce the MNEMONIC.
@@ -86,7 +86,7 @@
      ~ifeq(m5_instr_supported($@), 1, [
         def(['instr_defined_']m5_mnemonic, ['yes'])
         ~(['   ']m5_define_localparam(m5_mnemonic['_INSTR_OPCODE'], ['[6:0]'], ['7'b']m5_op5['11']))
-        ~(m4_instr$1(m5_mnemonic, m5_shift($@))m5_nl)
+        ~(m5_instr$1(m5_mnemonic, m5_shift($@))m5_nl)
      ])
   ])
 
@@ -103,7 +103,7 @@
   // TODO: Remove "new_" from name below.
   macro(asm_funct3, ['['m4_ifelse($2, ['rm'], ['3'b']']m5_rm[', m5_localparam_value(['$1_INSTR_FUNCT3']))']'])
   
-  // Opcode + funct3 + funct7 (R-type, R2-type). $@ as for m4_instrX(..), $7: MNEMONIC, $8: number of bits of leading bits of funct7 to interpret. If 5, for example, use the term funct5, $9: (opt) for R2, the r2 value.
+  // Opcode + funct3 + funct7 (R-type, R2-type). $@ as for m5_instrX(..), $7: MNEMONIC, $8: number of bits of leading bits of funct7 to interpret. If 5, for example, use the term funct5, $9: (opt) for R2, the r2 value.
   macro(instr_funct7,
      ['m5_instr_decode_expr($7, m5_op5_and_funct3($@)[' && $raw_funct7'][6:m4_eval(7-$8)][' == $8'b$5']m4_ifelse($9, [''], [''], [' && $raw_rs2 == 5'b$9']))m5_funct3_localparam(['$7'], ['$4'])m5_define_localparam(['$7_INSTR_FUNCT$8'], ['[$8-1:0]'], ['$8'b$5'])'])
   // For cases w/ extra shamt bit that cuts into funct7.
@@ -309,8 +309,9 @@
   fn(immediate_field_to_bits, num_bits, field, {
      ///DEBUG(immediate_field_to_bits(m5_num_bits, m5_field))
      // TODO: Support 0x, 0b, and decimal. ... I can't find a spec.
+     // TODO: As is, this could use m5_calc for all radixes, but need to find the proper syntax anyway.
      ~if_regex(m5_field, ['^\(-?\)0x\([0-9a-fA-F]+\)$'], (sign, hex), [
-        ~signed_int_to_fixed_binary(m5_num_bits, m5_sign['']m5_hex_to_int(m5_hex))
+        ~signed_int_to_fixed_binary(m5_num_bits, m5_sign['']m5_calc(['0x']m5_hex))
      ], ['^\(-?\)0b\([10]+\)$'], (sign, bin), [
         ~if_eq(sign, -, [
            /// Negative
@@ -358,9 +359,8 @@
 // M4-generated code. (Note: different indentation)
 \m5
    TLV_fn(riscv_gen, {
-      // The only output is for localparams, so
-      // squash all output if no localparams.
-      ~(m4_ifelse(m5_use_localparams, 0, [''], m4_dquote(m4_riscv_gen_guts())))
+      // The only output is for localparams, so squash all output if no localparams.
+      ~(m4_ifelse(m5_use_localparams, 0, [''], m4_dquote(m5_riscv_gen_guts())))
    })
    
    /// Define the mapping of a single CSR.
@@ -371,7 +371,7 @@
       // v---------------------
       // Instruction characterization
 
-      // CSR Map
+      // CSR Map. TODO: Merge this with CSR definitions.
       _def_csr(fflags,             1)
       _def_csr(frm,               10)
       _def_csr(fcsr,              11)
@@ -424,7 +424,7 @@
 
       // For each instruction type, a mask, where each bit indicates whether
       // the op5 corresponding to the bit position is of the given type.
-      // m5_instr calls produce localparam definitions for \SV_plus context)
+      // (m5_instr calls produce localparam definitions for \SV_plus context.)
       ~nl(\SV_plus)
       ~(m5_instr_types_sv(m5_instr_types_args))
 
@@ -436,7 +436,7 @@
       //     |  |   extension, 
       //     |  |   |  opcode[6:2],  // (aka op5)
       //     |  |   |  |      func3,   // (if applicable)
-      //     |  |   |  |      |    mnemonic
+      //     |  |   |  |      |    mnemonic)
       ~instr(U, 32, I, 01101,      LUI)
       ~instr(U, 32, I, 00101,      AUIPC)
       ~instr(J, 32, I, 11011,      JAL)
@@ -861,11 +861,12 @@
    // =========
    
    // These functions go from proper RISC-V assembly code to the pseudo-assembly defined by m5_asm functions.
-   
-   fn(abi_to_reg: ['Map an ABI register name. ABI name -> register name. If field_type is given,
-                    the type is checked and only the index is returned; o.w. the type is returned
-                    as the first character, e.g. "x3". For unknown registers, type is "-" and
-                    a register index is returned that is in range, though meaningless.'],
+   doc_fn(abi_to_reg, ['
+      D: Map an ABI register name. ABI name -> register name. If field_type is given,
+      the type is checked and only the index is returned; o.w. the type is returned
+      as the first character, e.g. "x3". For unknown registers, type is "-" and
+      a register index is returned that is in range, though meaningless.
+   '],
       abi: ['ABI or register name'],
       ?field_type: ['[x|f] register type'],
    {
@@ -1081,7 +1082,7 @@
       set(code, m5_code)
       var(assemble__cnt, 0)
       ~for_each_line(m5_code, [
-         ~assemble_line(m5_assemble__cnt, m5_line)
+         ~assemble_line(m5_assemble__cnt, m5_Line)
          increment(assemble__cnt)
       ])
    })
