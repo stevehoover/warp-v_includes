@@ -1,6 +1,6 @@
 \m4_TLV_version 1d: tl-x.org
    
-// 1) CLZ (count leading zeros)   
+// 1. CLZ (count leading zeros)
 // e.g. m4+clz_final(|pipe, /clz_stage, 32, 0, 1, $input, $output)
 \TLV clz_final(/_top, /_clz_stage, #_varbits, #_stage, #_stageinc, $_data_value, $_clz_output)
    m4_pushdef(['m4_clz_stage'], m4_strip_prefix(/_clz_stage))
@@ -21,7 +21,7 @@
    '])
    m4_popdef(['m4_clz_stage'])
    
-// 2) CTZ (count trailing zeros)   
+// 2. CTZ (count trailing zeros)
 // e.g. m4+ctz_final(|pipe, /ctz_stage, /reverse, 32, 0, 1, $input, $output)
 \TLV ctz_final(/_top, /_ctz_stage, /_reverse, #_varbits, #_stage, #_stageinc, $_data_value, $_ctz_output) 
    m4_pushdef(['m4_ctz_stage'], m4_strip_prefix(/_ctz_stage))
@@ -32,7 +32,7 @@
    m4+clz_final(/_top,/_ctz_stage,#_varbits,#_stage,#_stageinc,/_reverse$reverse_ctz, $_ctz_output)
    m4_popdef(['m4_ctz_stage'])
    
-// 3) popcnt (count no. of '1' in the input)
+// 3. popcnt (count no. of '1' in the input)
 // e.g. m4+popcnt(|pipe, /pop_stage, $input, $output, 32)
 \TLV redux_synth($_redux_sig,/_hier,#_MAX,#_MIN,$_sig,$_init_expr ,_op)
    \always_comb
@@ -47,7 +47,7 @@
    m4+redux_synth($_output[\$clog2(#_XLEN) : 0], /_pop_bit, m4_eval(#_XLEN - 1) , 0, $pop_temp, '0, +)
    m4_popdef(['m4_pop_bit'])
    
-// 4) Logic-with-negate instructions (andn, orn, xnor)
+// 4. Logic-with-negate instructions (andn, orn, xnor)
 // RS1 = input1  and RS2 = input2  and RD=output
 \TLV andn($_input1,$_input2,$_output)
    $_output = $_input1 & ~($_input2);
@@ -56,17 +56,17 @@
 \TLV xnor($_input1,$_input2,$_output)
    $_output = $_input1 ^ ~($_input2);
 
-// 7) Pack two words in one register (pack, packu, packh)
+// 7. Pack two words in one register (pack, packu, packh)
 //The "pack" instruction packs the XLEN/2-bit lower halves of 
 //rs1 and rs2 into rd, with rs1 in the lower half and rs2 in 
 //the upper half.
 // RS1 = input1  and RS2 = input2  and RD=output
 \TLV pack($_input1,$_input2,$_output,#_XLEN)
    $_output[#_XLEN - 1 : 0] = { $_input2[#_XLEN - 1 : (#_XLEN / 2)], $_input1[(#_XLEN / 2) - 1 : 0]};
-// 8) The "packu" instruction packs the upper halves of rs1 and rs2 into rd.
+// 8. The "packu" instruction packs the upper halves of rs1 and rs2 into rd.
 \TLV packu($_input1,$_input2,$_output,#_XLEN)
    $_output[#_XLEN - 1 : 0] = { $_input2[#_XLEN - 1 : (#_XLEN / 2)], $_input1[#_XLEN - 1 : (#_XLEN / 2)]};
-// 9) The "packh" instruction packs the LSB bytes of rs1 and rs2 into the 16 LSB
+// 9. The "packh" instruction packs the LSB bytes of rs1 and rs2 into the 16 LSB
 // bits of rd, zero extending the rest of rd.
 \TLV packh($_input1,$_input2,$_output,#_XLEN)
    $_output[#_XLEN - 1 : 0] = { {(m4_eval(#_XLEN / 2) - 1){1'b0}} ,$_input2[(#_XLEN / 4) - 1 : 0], $_input1[(#_XLEN / 4) - 1 : 0]};
@@ -91,51 +91,51 @@
                               (($_input1[#_XLEN - 1] == 1'b0) && ($_input2[#_XLEN - 1] == 1'b0) && ($_input1 > $_input2)) ? $_input1 :
                               (($_input1[#_XLEN - 1] == 1'b1) && ($_input2[#_XLEN - 1] == 1'b1) && ($_input1 < $_input2)) ? $_input1 : $_input2;  
 
-// 14) Single-bit instructions (sbset, sbclr, sbinv, sbext)   
+// 14. Single-bit instructions (sbset, sbclr, sbinv, sbext)
 // single-bit instructions sbset (set), sbclr (clear), sbinv (invert), and sbext (extract),
 //and their immediate-variants,   
 // RS1 = input1(data)  and RS2 = input2(sft_amt)  and RD = output
 //Set bit to'1' at location rs1[rs2].
 \TLV sbset($_input1,$_input2,$_output,#_XLEN)   
    $_output[#_XLEN - 1 : 0] = ($_input1 | (1 << ($_input2 & (#_XLEN - 1))));
-// 15) Clear bit to '0' at location rs1[rs2].
+// 15. Clear bit to '0' at location rs1[rs2].
 \TLV sbclr($_input1,$_input2,$_output,#_XLEN)   
    $_output[#_XLEN - 1 : 0] = ($_input1 & ~(1 << ($_input2 & (#_XLEN - 1))));
-// 16) reverse the bit at location rs1[rs2].
+// 16. reverse the bit at location rs1[rs2].
 \TLV sbinv($_input1,$_input2,$_output,#_XLEN)   
    $_output[#_XLEN - 1 : 0] = ($_input1 ^ (1 << ($_input2 & (#_XLEN - 1))));
-// 17) Extract the status of bit at loaction rs1[rs2].
+// 17. Extract the status of bit at loaction rs1[rs2].
 \TLV sbext($_input1,$_input2,$_output,#_XLEN)   
    $_output[#_XLEN - 1 : 0] = ( 1 & ($_input1 >> ($_input2 & (#_XLEN - 1))));
-// 18) RS1 = input1(data)  and imm = input2(sft_amt)  and RD = output
+// 18. RS1 = input1(data)  and imm = input2(sft_amt)  and RD = output
 \TLV sbseti($_input1,$_imm,$_output,#_XLEN)   
    $_output[#_XLEN - 1 : 0] = ($_input1 | (1 << ($_imm[#_XLEN - 1 : 0] & (#_XLEN - 1))));
-// 19) RS1 = input1(data)  and imm = input2(sft_amt)  and RD = output
+// 19. RS1 = input1(data)  and imm = input2(sft_amt)  and RD = output
 \TLV sbclri($_input1,$_imm,$_output,#_XLEN)
    $_output[#_XLEN - 1 : 0] = ($_input1 & ~(1 << ($_imm[#_XLEN - 1 : 0] & (#_XLEN - 1))));
-// 20) RS1 = input1(data)  and imm = input2(sft_amt)  and RD = output
+// 20. RS1 = input1(data)  and imm = input2(sft_amt)  and RD = output
 \TLV sbinvi($_input1,$_imm,$_output,#_XLEN)   
    $_output[#_XLEN - 1 : 0] = ($_input1 ^ (1 << ($_imm[#_XLEN - 1 : 0] & (#_XLEN - 1))));
-// 21) RS1 = input1(data)  and imm = input2(sft_amt)  and RD = output
+// 21. RS1 = input1(data)  and imm = input2(sft_amt)  and RD = output
 \TLV sbexti($_input1,$_imm,$_output,#_XLEN)   
    $_output[#_XLEN - 1 : 0] = ( 1 & ($_input1 >> ($_imm[#_XLEN - 1 : 0] & (#_XLEN - 1))));
    
-// 22) Shift Ones (Left/Right) (slo, sloi, sro, sroi)
+// 22. Shift Ones (Left/Right) (slo, sloi, sro, sroi)
 //Similar to shift-logical operations, except instead of shifting in zeros, they shift in ones
 // RS1 = input1(data)  and RS2 = input2(sft_amt)  and RD = output
 \TLV slo($_input1,$_input2,$_output,#_XLEN)   
    $_output[#_XLEN - 1 : 0] = ~(( ~($_input1) << ($_input2 & (#_XLEN - 1))));
-// 23) RS1 = input1(data)  and RS2 = input2(sft_amt)  and RD = output   
+// 23. RS1 = input1(data)  and RS2 = input2(sft_amt)  and RD = output
 \TLV sro($_input1,$_input2,$_output,#_XLEN)   
    $_output[#_XLEN - 1 : 0] = ~(( ~($_input1) >> ($_input2 & (#_XLEN - 1))));
-// 24) RS1 = input1(data)  and imm = input2(sft_amt)  and RD = output
+// 24. RS1 = input1(data)  and imm = input2(sft_amt)  and RD = output
 \TLV sloi($_input1,$_imm,$_output,#_XLEN)   
    $_output[#_XLEN - 1 : 0] = ~(( ~($_input1) << ($_imm[#_XLEN - 1 : 0] & (#_XLEN - 1))));
-// 25) RS1 = input1(data)  and RS2 = input2(sft_amt)  and RD = output
+// 25. RS1 = input1(data)  and RS2 = input2(sft_amt)  and RD = output
 \TLV sroi($_input1,$_imm,$_output,#_XLEN)   
    $_output[#_XLEN - 1 : 0] = ~(( ~($_input1) >> ($_imm[#_XLEN - 1 : 0] & (#_XLEN - 1))));
    
-// 26) ROTL (rotate left)
+// 26. ROTL (rotate left)
 // e.g. m4+rorl_final(32, 1, $input, $sftamt, $output, 31, 0)
 \TLV rorl_final(#_varbits,#_stage,$_reg_value,$_sft_amt,$_rotl,#_max,#_min)
    \always_comb
@@ -152,7 +152,7 @@
    $_rotl[#_max : #_min] = $_rotl['']#_stage[#_max : #_min];
    '])
    
-// 27) ROTR (rotate right)
+// 27. ROTR (rotate right)
 // e.g. m4+rorr_final(32, 1, $input, $sftamt, $output, 31, 0)
 \TLV rorr_final(#_varbits,#_stage,$_reg_value,$_sft_amt,$_rotr,#_max,#_min) 
    \always_comb
@@ -169,7 +169,7 @@
    $_rotr[#_max : #_min] = $_rotr['']#_stage[#_max : #_min];
    '])
    
-// 28) BREV (bit-wise reversal generalized)
+// 28. BREV (bit-wise reversal generalized)
 // e.g. m4+brev_final(|pipe, /brev_stage, 32, 32, 0, 1, $input, $sft_amt, $output)
 \TLV brev_final(/_top,/_brev_stage,#_constbits,#_varbits,#_stage,#_stageinc,$_data_value,$sft_amt,$resultq) 
    m4_pushdef(['m4_brev_stage'], m4_strip_prefix(/_brev_stage))
@@ -192,14 +192,14 @@
    '])
    m4_popdef(['m4_brev_stage'])
    
-// 29) This marco is inheritated from RISC-V bitmanip draft verilog module.
+// 29. This marco is inheritated from RISC-V bitmanip draft verilog module.
 // This module contains bext, bdep, gorc, grev, shfl, and unshfl instruction
 \TLV bext_dep(#_number,/_top ,#_xlen, #_is_grev, #_is_shfl, #_latency, $_clk, $_reset, $_din_valid, $_din_ready, $_din_rs1, $_din_rs2, $_din_insn3, $_din_insn13, $_din_insn14, $_din_insn29, $_din_insn30, $_dout_valid, $_dout_ready, $_dout_rd)
    \SV_plus
       rvb_bextdep#(#_xlen,#_is_grev,#_is_shfl,#_latency)
       rvb_bextdep#_number($_clk, $_reset, /_top$_din_valid, $['']$_din_ready, /_top$_din_rs1[#_xlen - 1 : 0], /_top$_din_rs2[#_xlen - 1 : 0], /_top$_din_insn3, /_top$_din_insn13, /_top$_din_insn14, /_top$_din_insn29, /_top$_din_insn30, $['']$_dout_valid, /_top$_dout_ready, $['']$_dout_rd);
 
-// 30) Bit-Field Place
+// 30. Bit-Field Place
 // The bit field place(bfp) instruction places up to XLEN/2 LSB bits from rs2 into the value in rs1.
 // The upper bits of rs2 control the length of the bit field and target position .The layout of rs2 is
 // chosen in a way that makes it possible to construct rs2 easily using pack[h] instructions and/or
@@ -214,7 +214,7 @@
    $data[ (#_XLEN ) - 1 : 0] = $_input2 << $off;
    $_output[ (#_XLEN - 1) : 0] = ($data & $mask) | ($_input1 & ~$mask);
    
-// 31) Carry-Less Multiply (clmul,  clmulh,  clmulr)
+// 31. Carry-Less Multiply (clmul,  clmulh,  clmulr)
 // This marco is inheritated from RISC-V bitmanip draft verilog module.
 // This module contains clmul, clmulh and clmulr instruction and
 // takes 4 clock cycles to calculate results.
@@ -223,7 +223,7 @@
       rvb_clmul#(#_xlen)
       rvb_clmul#_number($_clk, $_reset, /_top$_din_valid, $['']$_din_ready, /_top$_din_rs1[#_xlen - 1 : 0], /_top$_din_rs2[#_xlen - 1 : 0], /_top$_din_insn3, /_top$_din_insn12, /_top$_din_insn13, $['']$_dout_valid, /_top$_dout_ready, $['']$_dout_rd);   
    
-// 32) CRC Instructions (crc32.[bhwd],  crc32c.[bhwd])
+// 32. CRC Instructions (crc32.[bhwd],  crc32c.[bhwd])
 // TODO. at present not clear how it works.
 \TLV rvb_crc(#_number, /_top, #_xlen, $_clk, $_reset, $_din_valid, $_din_ready, $_din_rs1, $_din_insn20, $_din_insn21, $_din_insn23, $_dout_valid, $_dout_ready, $_dout_rd)
    \SV_plus
@@ -231,17 +231,17 @@
       rvb_crc#_number($_clk, $_reset, /_top$_din_valid, $['']$_din_ready, /_top$_din_rs1[#_xlen - 1 : 0], /_top$_din_insn20, /_top$_din_insn21, /_top$_din_insn23, $['']$_dout_valid, /_top$_dout_ready, $['']$_dout_rd);
 
 // Ternary Bit-Manipulation Instructions
-// 33) Conditional Mix (cmix)
+// 33. Conditional Mix (cmix)
 \TLV cmix($_input1,$_input2,$_input3,$_output,#_XLEN)
    $_output[#_XLEN - 1 : 0] = (($_input1[#_XLEN - 1 : 0] & $_input2[#_XLEN - 1 : 0]) | ($_input3[#_XLEN - 1 : 0] & (~ $_input2[#_XLEN - 1 : 0])));
 
-// 34) Conditional Move (cmov)
+// 34. Conditional Move (cmov)
 // The cmov instruction helps avoiding branches, which can lead to better performance, and
 // helps with constant-time code as used in some cryptography applications.
 \TLV cmov($_input1,$_input2,$_input3,$_output,#_XLEN)
    $_output[#_XLEN - 1 : 0] = (($_input2[#_XLEN - 1 : 0]) ? $_input1[#_XLEN - 1 : 0] : $_input3[#_XLEN - 1 : 0]);
    
-// 35) Funnel Shift (fsl, fsr, fsri)
+// 35. Funnel Shift (fsl, fsr, fsri)
 // This marco is inheritated from RISC-V bitmanip draft verilog module.
 // This module contains sll, srl, sra, slo, sro, rol, ror, fsl, fsr,
 // slliu.w, sbset, sbclr, sbinv, sbext and bfp instruction.
@@ -250,7 +250,7 @@
       rvb_shifter#(#_xlen,#_sop,#_bfp)
       rvb_shifter#_number($_clk, $_reset, /_top$_din_valid, $['']$_din_ready, /_top$_din_rs1[#_xlen - 1 : 0], /_top$_din_rs2[#_xlen - 1 : 0], /_top$_din_rs3[#_xlen - 1 : 0], /_top$_din_insn3, /_top$_din_insn13, /_top$_din_insn14, /_top$_din_insn26, /_top$_din_insn27, /_top$_din_insn29, /_top$_din_insn30, $['']$_dout_valid, /_top$_dout_ready, $['']$_dout_rd);
 
-// 36) Population Count
+// 36. Population Count
 // This marco is inheritated from RISC-V bitmanip draft verilog module.
 // This module contains clz, ctz, pcnt, bmatflip, sext.b and sext.h instruction.
 \TLV rvb_bitcnt(#_number, /_top, #_xlen, #_bmat, $_clk, $_reset, $_din_valid, $_din_ready, $_din_rs1, $_din_insn3, $_din_insn20, $_din_insn21, $_din_insn22, $_dout_valid, $_dout_ready, $_dout_rd)
@@ -270,4 +270,4 @@ m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/bf608
 m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/bf608b29da74c05eb436f51adb170d519d37ac3a/verilog/rvb_clmul/rvb_clmul.v'])
 m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/bf608b29da74c05eb436f51adb170d519d37ac3a/verilog/rvb_crc/rvb_crc.v'])
 m4_sv_include_url(['https://raw.githubusercontent.com/riscv/riscv-bitmanip/bf608b29da74c05eb436f51adb170d519d37ac3a/verilog/rvb_bitcnt/rvb_bitcnt.v'])
-/* verilator lint_restore */'])
+/* verilator lint_restore */

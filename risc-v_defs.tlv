@@ -1,4 +1,4 @@
-\m4_TLV_version 1d: tl-x.org
+\m5_TLV_version 1d: tl-x.org
 \m5
   // Instruction field values for each instruction are defined as localparams and as M4 defines. Assembly uses one or the other
   // depending on m5_use_localparams.
@@ -6,10 +6,10 @@
   // m5_define_localparam(<name>, <localparam-bit-range>, <value>)
   default_def(use_localparams, 0)
   def(define_localparam,
-      ['m4_define(['m5_$1'], ['$3'])m4_ifelse(m5_use_localparams, 1, ['['localparam $2 $1 = $3;']'])'])
+      ['m5_def(['$1'], ['$3'])m5_if_eq(m5_use_localparams, 1, ['['localparam $2 $1 = $3;']'])'])
   // Use defined localparam or m5_ constant, depending on m5_use_localparams.
   def(localparam_value,
-      ['m4_ifelse(m5_use_localparams, 1, [''], ['m5_'])$1'])
+      ['m5_if_eq(m5_use_localparams, 1, [''], ['m5_'])$1'])
 
   // --------------------------------------
   // Associate each op5 value with an instruction type.
@@ -24,22 +24,22 @@
   // Instantiated recursively for each instruction type.
   // Initializes m5_instr_type_X_mask_expr which will build up a mask, one bit per op5.
   def(instr_types,
-      ['m4_ifelse(['$1'], [''], [''],
-                  ['m4_define(['m5_instr_type_$1_mask_expr'], ['0'])m5_instr_types(m4_shift($@))'])'])
+      ['m5_if_eq(['$1'], [''], [''],
+                 ['m5_def(['instr_type_$1_mask_expr'], ['0'])m5_instr_types(m5_shift($@))'])'])
   // Instantiated recursively for each instruction type in \SV_plus context after characterizing each type.
   // Declares localparam INSTR_TYPE_X_MASK as m5_instr_type_X_mask_expr.
   fn(instr_types_sv, ..., [
      ~ifeq(['$1'], [''], [''], [
         ~(['    ']m5_define_localparam(['INSTR_TYPE_$1_MASK'], ['[31:0]'], m5_instr_type_$1_mask_expr)m5_nl)
-        ~instr_types_sv(m4_shift($@))
+        ~instr_types_sv(m5_shift($@))
      ])
   ])
   // Instantiated recursively for each instruction type in \SV_plus context to decode instruction type.
   // Creates "assign $$is_x_type = INSTR_TYPE_X_MASK[$raw_op5];" for each type.
   // TODO: Not sure how to extract a bit ($raw_op) from a constant expression. Hoping synthesis optimizes well.
   def(types_decode,
-         ['m4_ifelse(['$1'], [''], [''],
-                     ['m4_nl['   assign $$is_']m4_translit(['$1'], ['A-Z'], ['a-z'])['_type = (((']m5_localparam_value(['INSTR_TYPE_$1_MASK'])[') >> $raw_op5) & 32'b1) != 32'b0; ']m5_types_decode(m4_shift($@))'])'])
+         ['m5_if_eq(['$1'], [''], [''],
+                    ['m5_nl['   assign $$is_']m5_translit_eval(['$1'], ['A-Z'], ['a-z'])['_type = (((']m5_localparam_value(['INSTR_TYPE_$1_MASK'])[') >> $raw_op5) & 32'b1) != 32'b0; ']m5_types_decode(m5_shift($@))'])'])
   // Instantiated for each op5 in \SV_plus context.
   fn(op5, ..., [
      def(OP5_$1_TYPE, $2)
@@ -68,8 +68,8 @@
   // Return 1 if the given instruction is supported, [''] otherwise.
   // m5_instr_supported(<args-of-m5_instr(...)>)
   def(instr_supported,
-      ['m4_ifelse(m5_EXT_$3, 1,
-                  ['m4_ifelse(m5_WORD_CNT, ['$2'], 1, [''])'])'])
+      ['m5_if_eq(m5_EXT_$3, 1,
+                 ['m5_if_eq(m5_WORD_CNT, ['$2'], 1, [''])'])'])
 
   // Called for each instruction.
   // Outputs a string to evaluate that outputs indented content for \SV_plus context.
@@ -95,17 +95,17 @@
   // (This would be easier if we could use 'x', but Yosys doesn't support ==?/!=? operators.)
   // Helpers to deal with "rm" cases:
   macro(op5_and_funct3,
-     ['$raw_op5 == 5'b$3 m4_ifelse($4, ['rm'], [''], ['&& $raw_funct3 == 3'b$4'])'])
+     ['$raw_op5 == 5'b$3 m5_if_eq($4, ['rm'], [''], ['&& $raw_funct3 == 3'b$4'])'])
   macro(funct3_localparam,
-     ['m4_ifelse(['$2'], ['rm'], [''], ['m5_define_localparam(['$1_INSTR_FUNCT3'], ['[2:0]'], ['3'b$2'])'])'])
-  // m5_asm_<MNEMONIC> output for funct3 or rm, returned in unquoted context so arg references can be produced. 'rm' is always the last m5_asm_<MNEMONIC> arg (m4_arg(#)).
+     ['m5_if_eq(['$2'], ['rm'], [''], ['m5_define_localparam(['$1_INSTR_FUNCT3'], ['[2:0]'], ['3'b$2'])'])'])
+  // m5_asm_<MNEMONIC> output for funct3 or rm, returned in unquoted context so arg references can be produced. 'rm' is always the last m5_asm_<MNEMONIC> arg.
   //   Args: $1: MNEMONIC, $2: funct3 field of instruction definition (or 'rm')
   // TODO: Remove "new_" from name below.
-  macro(asm_funct3, ['['m4_ifelse($2, ['rm'], ['3'b']']m5_rm[', m5_localparam_value(['$1_INSTR_FUNCT3']))']'])
+  macro(asm_funct3, ['['m5_if_eq($2, ['rm'], ['3'b']']m5_rm[', m5_localparam_value(['$1_INSTR_FUNCT3']))']'])
   
   // Opcode + funct3 + funct7 (R-type, R2-type). $@ as for m5_instrX(..), $7: MNEMONIC, $8: number of bits of leading bits of funct7 to interpret. If 5, for example, use the term funct5, $9: (opt) for R2, the r2 value.
   macro(instr_funct7,
-     ['m5_instr_decode_expr($7, m5_op5_and_funct3($@)[' && $raw_funct7'][6:m4_eval(7-$8)][' == $8'b$5']m4_ifelse($9, [''], [''], [' && $raw_rs2 == 5'b$9']))m5_funct3_localparam(['$7'], ['$4'])m5_define_localparam(['$7_INSTR_FUNCT$8'], ['[$8-1:0]'], ['$8'b$5'])'])
+     ['m5_instr_decode_expr($7, m5_op5_and_funct3($@)[' && $raw_funct7'][6:m5_calc(7-$8)][' == $8'b$5']m5_if_eq($9, [''], [''], [' && $raw_rs2 == 5'b$9']))m5_funct3_localparam(['$7'], ['$4'])m5_define_localparam(['$7_INSTR_FUNCT$8'], ['[$8-1:0]'], ['$8'b$5'])'])
   // For cases w/ extra shamt bit that cuts into funct7.
   macro(instr_funct6,
      ['m5_instr_decode_expr($7, m5_op5_and_funct3($@)[' && $raw_funct7[6:1] == 6'b$5'])m5_funct3_localparam(['$7'], ['$4'])m5_define_localparam(['$7_INSTR_FUNCT6'], ['[6:0]'], ['6'b$5'])'])
@@ -124,8 +124,8 @@
   ])
 
   macro(instr_viz,
-     ['m4_ifelse(['$1'], [''], [''],
-                 ['['is_instr("$1", '$is_']['$1']['_instr'); ']$0(m4_shift($@))'])'])
+     ['m5_if_eq(['$1'], [''], [''],
+                ['['is_instr("$1", '$is_']['$1']['_instr'); ']$0(m5_shift($@))'])'])
   // m5_instr_decode_expr macro
   // Args: (MNEMONIC, decode_expr, (opt)['no_dest']/other)
   // Extends the following definitions to reflect the given instruction <mnemonic>:
@@ -139,13 +139,13 @@
       mnemonic_expr, [''])
   fn(instr_decode_expr, mnemonic, expr, ..., {
      // Lower case instruction name
-     var(lc_name, m4_translit(m5_mnemonic, ['A-Z'], ['a-z']))
-     append_macro(decode_expr, ['$is_']m5_lc_name['_instr = ']m5_expr[';']m4_nl)
+     var(lc_name, m5_translit_eval(m5_mnemonic, ['A-Z'], ['a-z']))
+     append_macro(decode_expr, ['$is_']m5_lc_name['_instr = ']m5_expr[';']m5_nl)
      ifeq(['$1'], ['no_dest'],
         [''],
         ['m5_append_macro(rslt_mux_expr, [' |']['m4_plus_new_line       ({']m5_WORD_CNT['{$is_']m5_lc_name['_instr}} & $']m5_lc_name['_rslt)'])'])
      append_macro(illegal_instr_expr, [' && ! $is_']m5_lc_name['_instr'])
-     append_macro(mnemonic_expr, ['$is_']m5_lc_name['_instr ? "']m5_mnemonic['']m4_substr(['          '], m4_len(m5_mnemonic))['" : '])
+     append_macro(mnemonic_expr, ['$is_']m5_lc_name['_instr ? "']m5_mnemonic['']m5_substr_eval(['          '], m5_length(m5_mnemonic))['" : '])
   })
 
   // The first arg of m5_instr(..) is a type, and a type-specific macro is invoked. Types are those defined by RISC-V, plus:
@@ -177,7 +177,7 @@
   //   For "A"-extension instructions, an additional final arg is REQUIRED to provide 2 binary bits for aq and rl.
   // Macro definitions include 2 parts:
   //   o Hardware definitions: m5_instr_<mnemonic>($@)
-  //   o Assembler definition of m5_asm_<MNEMONIC>: m4_define(['m5_asm_<MNEMONIC>'], ['m5_asm_instr_str(...)'])
+  //   o Assembler definition of m5_asm_<MNEMONIC>: m5_def(['asm_<MNEMONIC>'], ['m5_asm_instr_str(...)'])
   fn(instrI, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, ..., {
      ~instr_funct3($@)
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]imm, ^funct3, ^mnemonic, {
@@ -187,24 +187,26 @@
      })
   })
   fn(instrIf, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., {
-     ~instr_funct7($@, m5_mnemonic, m4_len(m5_imm_funct))
+     ~instr_funct7($@, m5_mnemonic, m5_length(m5_imm_funct))
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]imm, ^funct3, ^imm_funct, ^mnemonic, {
         asm_instr_str(I, m5_mnemonic, m5_fn_args)
-        ~quote(['{']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT']m4_len(m5_imm_funct))[', ']m4_eval(12-m4_len(m5_imm_funct))[''b']m5_imm[', ']m5_asm_reg(m5_src1)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT3'])[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
+        var(imm_width, m5_calc(12-m5_length(m5_imm_funct)))
+        set(imm, m5_immediate_field_to_bits(m5_imm_width, m5_imm))
+        ~quote(['{']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT']m5_length(m5_imm_funct))[', ']m5_imm_width[''b']m5_imm[', ']m5_asm_reg(m5_src1)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT3'])[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrR, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., {
-     ~instr_funct7($@, m5_mnemonic, m4_ifelse(m5_ext, ['A'], 5, 7))
+     ~instr_funct7($@, m5_mnemonic, m5_if_eq(m5_ext, ['A'], 5, 7))
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]src2, ?rm, ^ext, ^funct3, ^mnemonic, {
         asm_instr_str(R, m5_mnemonic, m5_fn_args['']m5_if_null(rm, [''], [', m5_rm']))
-        ~quote(['{']m4_ifelse(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7'])'])[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
+        ~quote(['{']m5_if_eq(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7'])'])[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrR2, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, [6]fixed_src2, ..., {
      ~instr_funct7($@, 7, m5_fixed_src2)
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, ?rm, ^ext, ^funct3, ^fixed_src2, ^mnemonic, {
         asm_instr_str(R, m5_mnemonic, m5_fn_args['']m5_if_null(rm, [''], [', m5_rm']))
-        ~quote(['{']m4_ifelse(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7'])'])[', 5'b']m5_fixed_src2[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
+        ~quote(['{']m5_if_eq(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7'])'])[', 5'b']m5_fixed_src2[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrR4, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., {
@@ -225,7 +227,7 @@
   fn(instrB, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, ..., {
      ~instr_funct3($@, no_dest)
      fn(['asm_']m5_mnemonic, [1]src1, [2]src2, [3]target, ^funct3, ^mnemonic, {
-        var(imm, m5_asm_target(13))
+        var(imm, m5_asm_target(13, m5_target))
         asm_instr_str(B, m5_mnemonic, m5_fn_args)
         /// m5_imm can be a label expression, so it's evaluation must be deferred, making the expressions below a bit messy.
         ~(['['{']m5_asm_imm_field(']m5_imm[', 13, 12, 12)[', ']m5_asm_imm_field(']m5_imm[', 13, 10, 5)[', ']'])
@@ -245,7 +247,7 @@
   fn(instrJ, mnemonic, [1]width, [2]ext, [3]op5, ..., {
      ~instr_no_func(m5_mnemonic, m5_op5)
      fn(['asm_']m5_mnemonic, [1]dest, [2]target, ^mnemonic, {
-        var(imm, m5_asm_target(21))
+        var(imm, m5_asm_target(21, m5_target))
         asm_instr_str(J, m5_mnemonic, m5_fn_args)
         /// m5_imm can be a label expression, so it's evaluation must be deferred, making the expressions below a bit messy.
         ~(['['{']m5_asm_imm_field(']m5_imm[', 21, 20, 20)[', ']m5_asm_imm_field(']m5_imm[', 21, 10, 1)[', ']m5_asm_imm_field(']m5_imm[', 21, 11, 11)[', ']m5_asm_imm_field(']m5_imm[', 21, 19, 12)[', ']'])
@@ -270,22 +272,22 @@
   // Specifically for assembler.
 
   // For labels:
-  // m4_[un]signed_int_to_fixed_binary(digits, value)
+  // m5_[un]signed_int_to_fixed_binary(digits, value)
   // Returns a string of 0s and 1s, representing the zero-padded binary value.
   // Args:
   //   digits: number of binary digits
   //   value: value (for signed, must be in the range -2**digits .. 2**digits-1 (and thus it works for unsigned as well),
   //                 for unsigned, must be in the range 0 .. 2**digits-1)
-  def(unsigned_int_to_fixed_binary, ['m4_ifelse(m4_eval($1 > 1), 1, ['m5_unsigned_int_to_fixed_binary(m4_eval($1-1), m4_eval($2 >> 1))'])['']m4_eval($2 % 2)'])
-  def(signed_int_to_fixed_binary, ['m5_unsigned_int_to_fixed_binary(['$1'], m4_ifelse(m4_eval($2 >= 0), 1, ['$2'], ['m4_eval($2 + 2 ** $1)']))'])
+  def(unsigned_int_to_fixed_binary, ['m5_if_eq(m5_calc($1 > 1), 1, ['m5_unsigned_int_to_fixed_binary(m5_calc($1-1), m5_calc($2 >> 1))'])['']m5_calc($2 % 2)'])
+  def(signed_int_to_fixed_binary, ['m5_unsigned_int_to_fixed_binary(['$1'], m5_if_eq(m5_calc($2 >= 0), 1, ['$2'], ['m5_calc($2 + 2 ** $1)']))'])
   def(define_label, ['m5_def(label_$1_addr, m5_NUM_INSTRS)'])
   =m4_def(label, m5_defn(define_label))   // Legacy use in m4 assembly code.
   // m5_label_to_imm(label, bit-width, num-instrs): Convert a label (excluding :) to an immediate for current m5_NUM_INSTRS.
-  def(label_to_imm, ['m5_signed_int_to_fixed_binary($2, m4_ifdef(['m5_label_$1_addr'], ['m4_eval((m5_label_$1_addr - ['$3']) * 4)'], ['m5_error(['No assembler label "']$1['".'])0000000000000']))'])
+  def(label_to_imm, ['m5_signed_int_to_fixed_binary($2, m5_if_def(['label_$1_addr'], ['m5_calc((m5_label_$1_addr - ['$3']) * 4)'], ['m5_error(['No assembler label "']$1['".'])0000000000000']))'])
   
-  // m5_asm_target(width): Output the offset for a given branch target arg in m4_target of the form :label or 1111111111000, with the given bit width.
-  fn(asm_target, [1], {
-     ~if_regex(m5_target, ['^:?\([a-zA-Z]\w*\|[0-9]+[fb]\)$'], (target), [
+  // m5_asm_target(width, target): Output the offset for a given branch target arg of the form :label or 1111111111000, with the given bit width.
+  fn(asm_target, [1], [2], {
+     ~if_regex(['$2'], ['^:?\([a-zA-Z]\w*\|[0-9]+[fb]\)$'], (target), [
         // Legacy M4-style label references (starting w/ ":"), or
         // Named label target.
         // Note: The label may not have been encountered yet.
@@ -293,7 +295,7 @@
         ~(['m5_label_to_imm(']m5_target[', $1, ']m5_NUM_INSTRS[')'])
      ])
      ~else([
-        ~immediate_field_to_bits(['$1'], m5_imm)
+        ~immediate_field_to_bits(['$1'], ['$2'])
      ])
   })
   
@@ -334,20 +336,20 @@
   // An 20-bit immediate binary zero string.
   def(asm_imm_zero, ['00000000000000000000'])
   // Zero-extend to n bits. E.g. m5_asm_zero_ext(1001, 7) => 0001001
-  def(asm_zero_ext, ['m4_substr(m5_asm_imm_zero, 0, m4_eval($2 - m4_len($1)))$1'])
+  def(asm_zero_ext, ['m5_substr_eval(m5_asm_imm_zero, 0, m5_calc($2 - m5_length($1)))$1'])
   // Extract bits from a binary immediate value.
   // m5_asm_imm_field(binary-imm, imm-length, max-bit, min-bit)
   // E.g. m5_asm_imm_field(101011, 17, 7, 3) => 5'b00101
-  def(asm_imm_field, ['m4_eval($3 - $4 + 1)'b['['']m4_substr(m5_asm_zero_ext($1, $2), ']m4_eval($2 - $3 - 1)[', ']m4_eval($3 - $4 + 1)[')']'])
+  def(asm_imm_field, ['m5_calc($3 - $4 + 1)'b['['']m5_substr_eval(m5_asm_zero_ext($1, $2), ']m5_calc($2 - $3 - 1)[', ']m5_calc($3 - $4 + 1)[')']'])
   // Register operand.
-  def(asm_reg, ['5'd['']m4_substr(m5_abi_to_reg(['$1']), 1)'])
+  def(asm_reg, ['5'd['']m5_substr_eval(m5_abi_to_reg(['$1']), 1)'])
 
   // For debug, a string for an asm instruction.
-  def(asm_instr_str, ['m4_with(str, ['['($1) $2 ']']m4_dquote(m4_shift(m4_shift($@))),
+  def(asm_instr_str, ['m4_with(str, ['['($1) $2 ']']m5_quote(m5_shift(m5_shift($@))),
                                   ['m5_def(['instr_str']m5_NUM_INSTRS,
-                                           m4_dquote(m4_str['']m4_substr(['                                        '], m4_len(m4_quote(m4_str)))))'])'])
+                                           m5_quote(m4_str['']m5_substr_eval(['                                        '], m5_length(m4_quote(m4_str)))))'])'])
   // Assemble an instruction.
-  // m5_asm(FOO, ...) defines m4_inst# as m5_comma_shiftFOO(...), counts instructions in m5_NUM_INSTRS ,and outputs a comment.
+  // m5_asm(FOO, ...) defines m5_inst# as m5_comma_shiftFOO(...), counts instructions in m5_NUM_INSTRS ,and outputs a comment.
   def(NUM_INSTRS, 0)
   fn(asm, mnemonic, ..., {
      def(['instr']m5_NUM_INSTRS, m5_call_varargs(['asm_']m5_mnemonic, ['$@']))
@@ -360,7 +362,7 @@
 \m5
    TLV_fn(riscv_gen, {
       // The only output is for localparams, so squash all output if no localparams.
-      ~(m4_ifelse(m5_use_localparams, 0, [''], m4_dquote(m5_riscv_gen_guts())))
+      ~(m5_if_eq(m5_use_localparams, 0, [''], m5_quote(m5_riscv_gen_guts())))
    })
    
    /// Define the mapping of a single CSR.
