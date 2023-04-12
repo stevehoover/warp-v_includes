@@ -9,7 +9,7 @@
       ['m5_def(['$1'], ['$3'])m5_if_eq(m5_use_localparams, 1, ['['localparam $2 $1 = $3;']'])'])
   // Use defined localparam or m5_ constant, depending on m5_use_localparams.
   def(localparam_value,
-      ['m5_if_eq(m5_use_localparams, 1, [''], ['m5_'])$1'])
+      ['m5_if_eq(m5_use_localparams, 1, ['$1'], ['m5_get($1)'])'])
 
   // --------------------------------------
   // Associate each op5 value with an instruction type.
@@ -30,7 +30,7 @@
   // Declares localparam INSTR_TYPE_X_MASK as m5_instr_type_X_mask_expr.
   fn(instr_types_sv, ..., [
      ~ifeq(['$1'], [''], [''], [
-        ~(['    ']m5_define_localparam(['INSTR_TYPE_$1_MASK'], ['[31:0]'], m5_instr_type_$1_mask_expr)m5_nl)
+        ~(['    ']m5_define_localparam(['INSTR_TYPE_$1_MASK'], ['[31:0]'], m5_get(instr_type_$1_mask_expr))m5_nl)
         ~instr_types_sv(m5_shift($@))
      ])
   ])
@@ -45,7 +45,7 @@
      def(OP5_$1_TYPE, $2)
      def(op5_named_$3, $1)
      ~nl(['   ']m5_define_localparam(['OP5_$3'], ['[4:0]'], ['5'b$1']))
-     def(instr_type_$2_mask_expr, m4_quote(m5_instr_type_$2_mask_expr)[' | (1 << 5'b$1)'])
+     def(instr_type_$2_mask_expr, m4_quote(m5_get(instr_type_$2_mask_expr))[' | (1 << 5'b$1)'])
   ])
 
 
@@ -68,7 +68,7 @@
   // Return 1 if the given instruction is supported, [''] otherwise.
   // m5_instr_supported(<args-of-m5_instr(...)>)
   def(instr_supported,
-      ['m5_if_eq(m5_EXT_$3, 1,
+      ['m5_if_eq(m5_get(EXT_$3), 1,
                  ['m5_if_eq(m5_WORD_CNT, ['$2'], 1, [''])'])'])
 
   // Called for each instruction.
@@ -80,7 +80,7 @@
      // Define the instruction -> op5 map.
      def(['op5_of_instr_']m5_mnemonic, m5_defn(op5))
      // check instr type
-     ifne(m5_OP5_$4_TYPE, m5_ifdef(['instr_type_of_$1'], m5_instr_type_of_$1, ['$1']),
+     ifne(m5_get(OP5_$4_TYPE), m5_ifdef(['instr_type_of_$1'], ['m5_get(instr_type_of_$1)'], ['$1']),
         ['m5_error(['Instruction ']m5_mnemonic[''s type (']m5_type[') is inconsistant with its op5 code (']m5_op5[') of type ']m5_eval(['m5_OP5_']m5_op5['_TYPE'])['.'])'])
      // if instrs extension is supported and instr is for the right machine width, include it
      ~ifeq(m5_instr_supported($@), 1, [
@@ -101,7 +101,7 @@
   // m5_asm_<MNEMONIC> output for funct3 or rm, returned in unquoted context so arg references can be produced. 'rm' is always the last m5_asm_<MNEMONIC> arg.
   //   Args: $1: MNEMONIC, $2: funct3 field of instruction definition (or 'rm')
   // TODO: Remove "new_" from name below.
-  macro(asm_funct3, ['['m5_if_eq($2, ['rm'], ['3'b']']m5_rm[', m5_localparam_value(['$1_INSTR_FUNCT3']))']'])
+  macro(asm_funct3, ['['m5_if_eq($2, ['rm'], ['3'b$3'], m5_localparam_value(['$1_INSTR_FUNCT3']))']'])
   
   // Opcode + funct3 + funct7 (R-type, R2-type). $@ as for m5_instrX(..), $7: MNEMONIC, $8: number of bits of leading bits of funct7 to interpret. If 5, for example, use the term funct5, $9: (opt) for R2, the r2 value.
   macro(instr_funct7,
@@ -199,21 +199,21 @@
      ~instr_funct7($@, m5_mnemonic, m5_if_eq(m5_ext, ['A'], 5, 7))
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]src2, ?rm, ^ext, ^funct3, ^mnemonic, {
         asm_instr_str(R, m5_mnemonic, m5_fn_args['']m5_if_null(rm, [''], [', m5_rm']))
-        ~quote(['{']m5_if_eq(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7'])'])[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
+        ~quote(['{']m5_if_eq(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7'])'])[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3, m5_rm)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrR2, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, [6]fixed_src2, ..., {
      ~instr_funct7($@, 7, m5_fixed_src2)
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, ?rm, ^ext, ^funct3, ^fixed_src2, ^mnemonic, {
         asm_instr_str(R, m5_mnemonic, m5_fn_args['']m5_if_null(rm, [''], [', m5_rm']))
-        ~quote(['{']m5_if_eq(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7'])'])[', 5'b']m5_fixed_src2[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
+        ~quote(['{']m5_if_eq(m5_ext, ['A'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT5'])[', ']m5_src1'], ['m5_localparam_value(m5_mnemonic['_INSTR_FUNCT7'])'])[', 5'b']m5_fixed_src2[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3, m5_rm)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrR4, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., {
      ~instr_funct2($@)
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]src2, [4]src3, ?rm, ^funct3, ^mnemonic, {
         asm_instr_str(R, m5_mnemonic, m5_fn_args['']m5_if_null(rm, [''], [', m5_rm']))
-        ~quote(['{']m5_asm_reg(m5_src3)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT2'])[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
+        ~quote(['{']m5_asm_reg(m5_src3)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT2'])[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3, m5_rm)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrS, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, ..., {
@@ -283,7 +283,7 @@
   def(define_label, ['m5_def(label_$1_addr, m5_NUM_INSTRS)'])
   =m4_def(label, m5_defn(define_label))   // Legacy use in m4 assembly code.
   // m5_label_to_imm(label, bit-width, num-instrs): Convert a label (excluding :) to an immediate for current m5_NUM_INSTRS.
-  def(label_to_imm, ['m5_signed_int_to_fixed_binary($2, m5_if_def(['label_$1_addr'], ['m5_calc((m5_label_$1_addr - ['$3']) * 4)'], ['m5_error(['No assembler label "']$1['".'])0000000000000']))'])
+  def(label_to_imm, ['m5_signed_int_to_fixed_binary($2, m5_if_def(['label_$1_addr'], ['m5_calc((m5_get(label_$1_addr) - ['$3']) * 4)'], ['m5_error(['No assembler label "']$1['".'])0000000000000']))'])
   
   // m5_asm_target(width, target): Output the offset for a given branch target arg of the form :label or 1111111111000, with the given bit width.
   fn(asm_target, [1], [2], {
@@ -878,7 +878,7 @@
       //DEBUG(['Processing ABI: ']m5_abi m5_eval(m5__REG_OF_ABI_NAME_['']m5_uppercase(m5_abi)))
       /// Look up mapping.
       if_def(_REG_OF_ABI_NAME_['']m5_uppercase(m5_abi), [
-         var_regex(m5_eval(['m5__REG_OF_ABI_NAME_']m5_uppercase(m5_abi)), ['\([a-z]+\)\([0-9]*\)'], (reg_type2, reg_index2))
+         var_regex(m5_get(['_REG_OF_ABI_NAME_']m5_uppercase(m5_abi)), ['\([a-z]+\)\([0-9]*\)'], (reg_type2, reg_index2))
          else([
             error(['BUG: Failed to pattern match ABI type and index.'])
             set(reg_type2, -, reg_index, 0)
@@ -946,8 +946,8 @@
    var(js_abi_f_map, [)
    eval({
       fn(js_abi, cnt, [
-         append_var(js_abi_x_map, ['"']m5_eval(m5__ABI_NAME_OF_X['']m5_cnt)['", '])
-         append_var(js_abi_f_map, ['"']m5_eval(m5__ABI_NAME_OF_F['']m5_cnt)['", '])
+         append_var(js_abi_x_map, ['"']m5_eval(m5_get(['_ABI_NAME_OF_X']m5_cnt))['", '])
+         append_var(js_abi_f_map, ['"']m5_eval(m5_get(['_ABI_NAME_OF_F']m5_cnt))['", '])
          if(m5_cnt < 31, [
             js_abi(m5_calc(m5_cnt + 1))
          ])
@@ -970,7 +970,7 @@
       
       // Parse format based on instruction characteristics.
       
-      var(op5, m5_eval(['m5_op5_of_instr_']m5_mnemonic))
+      var(op5, m5_get(['op5_of_instr_']m5_mnemonic))
       ~if(m5_eq(m5_op5, m5_op5_named_LOAD) ||
          m5_eq(m5_op5, m5_op5_named_LOAD_FP) ||
          m5_eq(m5_op5, m5_op5_named_STORE) ||
@@ -1070,7 +1070,6 @@
          // Label
          //
          
-         ///DEBUG(['Found label: ']m5_label)
          define_label(m5_label)
       
       }, {
