@@ -424,12 +424,12 @@
       ~nl(['// Instruction characterization.'])
       ~nl(['// (User ISA Manual 2.2, Table 19.2)'])
       ~nl(\SV_plus)
-      /str(type,  /// (this is simply verified vs. op5)
-      /    |  bit-width,
-      /    |  |   extension, 
-      /    |  |   |  opcode[6:2],  /// (aka op5)
-      /    |  |   |  |      func3,   /// (if applicable)
-      /    |  |   |  |      |    mnemonic)
+      /instr(type,  /// (this is simply verified vs. op5)
+      /      |  bit-width,
+      /      |  |   extension, 
+      /      |  |   |  opcode[6:2],  /// (aka op5)
+      /      |  |   |  |      func3,   /// (if applicable)
+      /      |  |   |  |      |    mnemonic)
       ~instr(U, 32, I, 01101,      LUI)
       ~instr(U, 32, I, 00101,      AUIPC)
       ~instr(J, 32, I, 11011,      JAL)
@@ -873,7 +873,8 @@
       ])
       else_if(m5_eq(m5_name, x) || m5_eq(m5_name, f), [
          /x# or f# register.
-         var(reg_type2, m5_name, reg_index2, m5_num)
+         var(reg_type2, m5_name)
+         var(reg_index2, m5_num)
          if(m5_num > 31, [
             error(['Register ']m5_abi[' index out of range.'])
             set(reg_index2, 0)
