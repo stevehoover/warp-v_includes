@@ -10,8 +10,9 @@
   macro(define_localparam,
       ['m5_universal_var(['$1'], ['$3'])m5_if(m5_use_localparams, ['['localparam $2 $1 = $3;']'])'])
   /Use defined localparam or m5_ constant, depending on m5_use_localparams.
-  macro(localparam_value,
-      ['m5_if(m5_use_localparams, ['$1'], ['m5_get($1)'])'])
+  fn(localparam_value, param, [
+     ~if(m5_use_localparams, ['m5_param'], ['m5_get(m5_param)'])
+  ])
 
   /--------------------------------------
   /Associate each op5 value with an instruction type.
@@ -98,12 +99,26 @@
   /Helpers to deal with "rm" cases:
   macro(op5_and_funct3,
      ['$raw_op5 == 5'b$3 m5_if_eq($4, ['rm'], [''], ['&& $raw_funct3 == 3'b$4'])'])
-  macro(funct3_localparam,
-     ['m5_if_eq(['$2'], ['rm'], [''], ['m5_define_localparam(['$1_INSTR_FUNCT3'], ['[2:0]'], ['3'b$2'])'])'])
+  fn(funct3_localparam, mnemonic, funct3, [
+     if_eq(m5_funct3, rm, [''], [
+        define_localparam(m5_mnemonic['_INSTR_FUNCT3'], ['[2:0]'], ['3'b']m5_funct3)
+     ])
+  ])
   /m5_asm_<MNEMONIC> output for funct3 or rm, returned in unquoted context so arg references can be produced. 'rm' is always the last m5_asm_<MNEMONIC> arg.
   /  Args: $1: MNEMONIC, $2: funct3 field of instruction definition (or 'rm')
-  /TODO: Remove "new_" from name below.
-  macro(asm_funct3, ['['m5_if_eq($2, ['rm'], ['3'b$3'], m5_localparam_value(['$1_INSTR_FUNCT3']))']'])
+  fn(asm_funct3, ..., ['{
+     ~if_eq($2, rm, [
+        ~(['3'b'])
+        ~if_var_def(rv__rm_$3_arg, [
+           ~get(rv__rm_$3_arg)
+        ], [
+           warning(['$1 instruction's rm field unrecognized ("$3").'])
+           ~(['$3'])
+        ])
+     ], [
+        ~localparam_value(['$1_INSTR_FUNCT3'])
+     ])
+  }'])
   
   /Opcode + funct3 + funct7 (R-type, R2-type). $@ as for m5_instrX(..), $7: MNEMONIC, $8: number of bits of leading bits of funct7 to interpret. If 5, for example, use the term funct5, $9: (opt) for R2, the r2 value.
   macro(instr_funct7,
@@ -358,6 +373,8 @@
    
    /Define the mapping of a single CSR.
    macro(_def_csr, ['m5_universal_var(csr_$1_arg, ['$2'])'])
+   /Define the mapping of rounding modes.
+   macro(_def_rm, ['m5_universal_var(rv__rm_$1_arg, ['$2'])'])
    
    fn(riscv_gen_guts, [
       /(Output is squashed by caller unless m5_use_localparams.)
@@ -374,6 +391,15 @@
       _def_csr(cycleh,  110010000000)
       _def_csr(timeh,   110010000001)
       _def_csr(instreth,110010000010)
+
+      /Rounding mode map.
+      _def_rm(rne, 000)
+      _def_rm(rtz, 001)
+      _def_rm(rdn, 010)
+      _def_rm(rup, 011)
+      _def_rm(rmm, 100)
+      _def_rm(dyn, 111)
+      _def_rm(, 111)   /// Default to dyn.
 
       /For each opcode[6:2]
       /(User ISA Manual 2.2, Table 19.1)
@@ -961,10 +987,10 @@
       
       var(op5, m5_get(['op5_of_instr_']m5_mnemonic))
       ~if(m5_eq(m5_op5, m5_op5_named_LOAD) ||
-         m5_eq(m5_op5, m5_op5_named_LOAD_FP) ||
-         m5_eq(m5_op5, m5_op5_named_STORE) ||
-         m5_eq(m5_op5, m5_op5_named_STORE_FP) ||
-         m5_eq(m5_mnemonic, JALR),
+          m5_eq(m5_op5, m5_op5_named_LOAD_FP) ||
+          m5_eq(m5_op5, m5_op5_named_STORE) ||
+          m5_eq(m5_op5, m5_op5_named_STORE_FP) ||
+          m5_eq(m5_mnemonic, JALR),
       [
          /Format should be, e.g. LB a0, 0(a2)
          var_regex(m5_fields, ['^\(\w+\),\s*\(-?\w+\)(\(\w+\))$'], (r1, imm, r2))
@@ -979,7 +1005,7 @@
          /CSR instructions take a CSR as the immediate, and for some reason, the operands are in a different order.
          /Decode the CSR.
          fn(process_fields, rd, csr, rs, {
-            var(csr_arg, m5_if_def(['csr_']m5_csr['_arg'], ['m5_csr_']m5_csr['_arg'], ['m5_csr']))
+            var(csr_arg, m5_if_var_def(['csr_']m5_csr['_arg'], ['['0b']m5_get(['csr_']m5_csr['_arg'])'], ['m5_csr']))
             ~asm(m5_mnemonic, m5_rd, m5_rs, m5_csr_arg)
          })
          ~process_fields(m5_eval(m5_fields))
