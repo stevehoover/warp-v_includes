@@ -5,13 +5,19 @@
   /Define localparam and m5_ constant.
   /m5_define_localparam(<name>, <localparam-bit-range>, <value>)
   /Backward compatibility, convert macro definition to var.
-  if_def(use_localparams, ['m5_var(['use_localparams'], m5_use_localparams)'])
+  if_def(use_localparams, [
+     var(['use_localparams'], m5_use_localparams)
+  ])
   default_var(use_localparams, 0)
-  macro(define_localparam,
-      ['m5_universal_var(['$1'], ['$3'])m5_if(m5_use_localparams, ['['localparam $2 $1 = $3;']'])'])
+  macro(define_localparam, [
+     universal_var(['$1'], ['$3'])
+     ~if(m5_use_localparams, [
+        ~(['localparam $2 $1 = $3;'])
+     ])
+  ])
   /Use defined localparam or m5_ constant, depending on m5_use_localparams.
-  fn(localparam_value, param, [
-     ~if(m5_use_localparams, ['m5_param'], ['m5_get(m5_param)'])
+  macro(localparam_value, [
+     ~if(m5_use_localparams, ['['$1']'], ['m5_get(['$1'])'])
   ])
 
   /--------------------------------------
@@ -26,12 +32,15 @@
   /We construct localparam INSTR_TYPE_X_MASK as a mask, one bit per op5 indicating whether the op5 is of the type.
   /Instantiated recursively for each instruction type.
   /Initializes m5_instr_type_X_mask_expr which will build up a mask, one bit per op5.
-  macro(instr_types,
-      ['m5_if_eq($1, [''], [''],
-                 ['m5_universal_var(instr_type_$1_mask_expr, 0)m5_instr_types(m5_shift($@))'])'])
+  macro(instr_types, [
+     if_eq($1, [''], [''], [
+        universal_var(instr_type_$1_mask_expr, 0)
+        instr_types(m5_shift($@))
+     ])
+  ])
   /Instantiated recursively for each instruction type in \SV_plus context after characterizing each type.
   /Declares localparam INSTR_TYPE_X_MASK as m5_instr_type_X_mask_expr.
-  fn(instr_types_sv, ..., [
+  macro(instr_types_sv, [
      ~if_eq(['$1'], [''], [''], [
         ~(['    ']m5_define_localparam(['INSTR_TYPE_$1_MASK'], ['[31:0]'], m5_get(instr_type_$1_mask_expr))m5_nl)
         ~instr_types_sv(m5_shift($@))
@@ -40,16 +49,25 @@
   /Instantiated recursively for each instruction type in \SV_plus context to decode instruction type.
   /Creates "assign $$is_x_type = INSTR_TYPE_X_MASK[$raw_op5];" for each type.
   /TODO: Not sure how to extract a bit ($raw_op) from a constant expression. Hoping synthesis optimizes well.
-  macro(types_decode,
-         ['m5_if_eq(['$1'], [''], [''],
-                    ['m5_nl['   assign $$is_']m5_translit_eval(['$1'], ['A-Z'], ['a-z'])['_type = (((']m5_localparam_value(['INSTR_TYPE_$1_MASK'])[') >> $raw_op5) & 32'b1) != 32'b0; ']m5_types_decode(m5_shift($@))'])'])
+  macro(types_decode, {
+     ~if_neq(['$1'], [''], [
+        ~nl
+        ~(['   assign $$is_'])
+        ~lowercase(['$1'])
+        var(lp, m5_localparam_value(['INSTR_TYPE_$1_MASK']))
+        ~(['_type = (((']m5_lp[') >> $raw_op5) & 32'b1) != 32'b0; '])
+        ~types_decode(m5_shift($@))
+     ])
+  })
   /Instantiated for each op5 in \SV_plus context.
-  fn(op5, ..., [
+  fn(op5, ..., {
      universal_var(OP5_$1_TYPE, $2)
      universal_var(op5_named_$3, $1)
-     ~nl(['   ']m5_define_localparam(['OP5_$3'], ['[4:0]'], ['5'b$1']))
-     set(instr_type_$2_mask_expr, m5_get(instr_type_$2_mask_expr)[' | (1 << 5'b$1)'])
-  ])
+     ~(['   '])
+     ~define_localparam(['OP5_$3'], ['[4:0]'], ['5'b$1'])
+     ~nl
+     on_return(append_var, instr_type_$2_mask_expr, [' | (1 << 5'b$1)'])
+  })
 
 
   /--------------------------------
@@ -70,9 +88,9 @@
 
   /Return 1 if the given instruction is supported, [''] otherwise.
   /m5_instr_supported(<args-of-m5_instr(...)>)
-  macro(instr_supported,
-      ['m5_if_eq(m5_get(EXT_$3), 1,
-                 ['m5_if_eq(m5_WORD_CNT, ['$2'], 1, [''])'])'])
+  macro(instr_supported, [
+     ~if(m5_get(EXT_$3) && m5_eq(m5_WORD_CNT, ['$2']), ['1'], [''])
+  ])
 
   /Called for each instruction.
   /Outputs a string to evaluate that outputs indented content for \SV_plus context.
@@ -99,14 +117,15 @@
   /Helpers to deal with "rm" cases:
   macro(op5_and_funct3,
      ['$raw_op5 == 5'b$3 m5_if_eq($4, ['rm'], [''], ['&& $raw_funct3 == 3'b$4'])'])
-  fn(funct3_localparam, mnemonic, funct3, [
+  fn(funct3_localparam, mnemonic, funct3, {
      if_eq(m5_funct3, rm, [''], [
-        define_localparam(m5_mnemonic['_INSTR_FUNCT3'], ['[2:0]'], ['3'b']m5_funct3)
+        on_return(define_localparam, m5_mnemonic['_INSTR_FUNCT3'], ['[2:0]'], ['3'b']m5_funct3)
      ])
-  ])
+  })
   /m5_asm_<MNEMONIC> output for funct3 or rm, returned in unquoted context so arg references can be produced. 'rm' is always the last m5_asm_<MNEMONIC> arg.
-  /  Args: $1: MNEMONIC, $2: funct3 field of instruction definition (or 'rm')
-  fn(asm_funct3, ..., ['{
+  /  Args: $1: MNEMONIC
+  /        $2: funct3 field of instruction definition (or 'rm')
+  macro(asm_funct3, ['{
      ~if_eq($2, rm, [
         ~(['3'b'])
         ~if_var_def(rv__rm_$3_arg, [
@@ -121,27 +140,39 @@
   }'])
   
   /Opcode + funct3 + funct7 (R-type, R2-type). $@ as for m5_instrX(..), $7: MNEMONIC, $8: number of bits of leading bits of funct7 to interpret. If 5, for example, use the term funct5, $9: (opt) for R2, the r2 value.
-  macro(instr_funct7,
-     ['m5_instr_decode_expr($7, m5_op5_and_funct3($@)[' && $raw_funct7'][6:m5_calc(7-$8)][' == $8'b$5']m5_if_eq($9, [''], [''], [' && $raw_rs2 == 5'b$9']))m5_funct3_localparam(['$7'], ['$4'])m5_define_localparam(['$7_INSTR_FUNCT$8'], ['[$8-1:0]'], ['$8'b$5'])'])
+  macro(instr_funct7, [
+     ~instr_decode_expr($7, m5_op5_and_funct3($@)[' && $raw_funct7'][6:m5_calc(7-$8)][' == $8'b$5']m5_if_eq($9, [''], [''], [' && $raw_rs2 == 5'b$9']))
+     ~funct3_localparam(['$7'], ['$4'])
+     ~define_localparam(['$7_INSTR_FUNCT$8'], ['[$8-1:0]'], ['$8'b$5'])
+  ])
   /For cases w/ extra shamt bit that cuts into funct7.
-  macro(instr_funct6,
-     ['m5_instr_decode_expr($7, m5_op5_and_funct3($@)[' && $raw_funct7[6:1] == 6'b$5'])m5_funct3_localparam(['$7'], ['$4'])m5_define_localparam(['$7_INSTR_FUNCT6'], ['[6:0]'], ['6'b$5'])'])
+  macro(instr_funct6, [
+     ~instr_decode_expr($7, m5_op5_and_funct3($@)[' && $raw_funct7[6:1] == 6'b$5'])
+     ~funct3_localparam(['$7'], ['$4'])
+     ~define_localparam(['$7_INSTR_FUNCT6'], ['[6:0]'], ['6'b$5'])
+  ])
   /Opcode + funct3 + func7[1:0] (R4-type)
-  macro(instr_funct2,
-         ['m5_instr_decode_expr($6, m5_op5_and_funct3($@)[' && $raw_funct7[1:0] == 2'b$5'])m5_funct3_localparam(['$6'], ['$4'])m5_define_localparam(['$6_INSTR_FUNCT2'], ['[1:0]'], ['2'b$5'])'])
+  macro(instr_funct2, [
+     ~instr_decode_expr($6, m5_op5_and_funct3($@)[' && $raw_funct7[1:0] == 2'b$5'])
+     ~funct3_localparam(['$6'], ['$4'])
+     ~define_localparam(['$6_INSTR_FUNCT2'], ['[1:0]'], ['2'b$5'])
+  ])
   /Opcode + funct3 + funct7[6:2] (R-type where funct7 has two lower bits that do not distinguish mnemonic.)
-  macro(instr_funct5,
-         ['m5_instr_decode_expr($6, m5_op5_and_funct3($@)[' && $raw_funct7[6:2] == 5'b$5'])m5_funct3_localparam(['$6'], ['$4'])m5_define_localparam(['$6_INSTR_FUNCT5'], ['[4:0]'], ['5'b$5'])'])
+  macro(instr_funct5, [
+     ~instr_decode_expr($6, m5_op5_and_funct3($@)[' && $raw_funct7[6:2] == 5'b$5'])
+     ~funct3_localparam(['$6'], ['$4'])
+     ~define_localparam(['$6_INSTR_FUNCT5'], ['[4:0]'], ['5'b$5'])
+  ])
   /Opcode + funct3
-  macro(instr_funct3,
-         ['m5_instr_decode_expr($5, m5_op5_and_funct3($@), $6)m5_funct3_localparam(['$5'], ['$4'])'])
+  macro(instr_funct3, [
+     ~instr_decode_expr($5, m5_op5_and_funct3($@), $6)
+     ~funct3_localparam(['$5'], ['$4'])
+  ])
   /Opcode
   fn(instr_no_func, mnemonic, op5, [
      instr_decode_expr(m5_mnemonic, ['$raw_op5 == 5'b']m5_op5)
   ])
-  macro(instr_viz,
-     ['m5_if_eq(['$1'], [''], [''],
-                ['['is_instr("$1", '$is_']['$1']['_instr'); ']$0(m5_shift($@))'])'])
+
   /m5_instr_decode_expr(<mnemonic>, <decode_expr>, (opt)['no_dest']/other)
   /Extends the following definitions to reflect the given instruction <mnemonic>:
   universal_vars(
@@ -292,7 +323,7 @@
   /  value: value (in the range -2**(digits-1) .. 2**(digits-1)-1)
   macro(signed_int_to_fixed_binary, ['m5_if(m5_calc($2 < 0), ['m5_if($2 < -(2 ** ($1 - 1)), ['m5_error(['Value $2 out of range for $1-bit signed integer.'])'])m5_calc($2 + 2 ** $1, 2, ['$1'])'], ['m5_if($2 >= 2 ** ($1 - 1), ['m5_error(['Value $2 out of range for $1-bit signed integer.'])'])m5_calc($2, 2, ['$1'])'])'])
   macro(define_label, ['m5_universal_var(label_$1_addr, $2)'])
-  /m5_label_to_imm(label, bit-width, num-instrs): Convert a label (excluding :) to an immediate for current m5_NUM_INSTRS.
+  /label_to_imm(label, bit-width, num-instrs): Convert a label (excluding :) to an immediate for current m5_NUM_INSTRS.
   macro(label_to_imm, ['m5_signed_int_to_fixed_binary($2, m5_if_var_def(['label_$1_addr'], ['m5_calc((m5_get(label_$1_addr) - ['$3']) * 4)'], ['m5_error(['No assembler label "']$1['".'])0']))'])
   
   /m5_asm_target(width, target): Output the offset for a given branch target arg of the form :label or 1111111111000, with the given bit width.
