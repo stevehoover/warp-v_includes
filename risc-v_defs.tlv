@@ -102,7 +102,7 @@
      universal_var(['op5_of_instr_']m5_mnemonic, m5_op5)
      /check instr type
      if_neq(m5_get(OP5_$4_TYPE), m5_if_var_def(instr_type_of_$1, ['m5_get(instr_type_of_$1)'], ['$1']),
-        ['m5_error(['Instruction ']m5_mnemonic[''s type (']m5_type[') is inconsistant with its op5 code (']m5_op5[') of type ']m5_get(['OP5_']m5_op5['_TYPE'])['.'] m5_get(OP5_$4_TYPE) m5_if_var_def(instr_type_of_$1, ['m5_get(instr_type_of_$1)'], ['$1']) )'])
+        ['m5_error(['Instruction ']m5_mnemonic[''s type (']m5_type[') is inconsistant with its op5 code (']m5_op5[') of type ']m5_get(['OP5_']m5_op5['_TYPE'])['.'])'])
      /if instrs extension is supported and instr is for the right machine width, include it
      ~if_eq(m5_instr_supported($@), 1, [
         universal_var(['instr_defined_']m5_mnemonic, ['yes'])
@@ -175,6 +175,7 @@
 
   /m5_instr_decode_expr(<mnemonic>, <decode_expr>, (opt)['no_dest']/other)
   /Extends the following definitions to reflect the given instruction <mnemonic>:
+  /TODO: Also generate a mutex assertion that only one $is_XXX_instr is true.
   universal_vars(
       decode_expr, [''],        /// instructiton decode: $is_<mnemonic>_instr = ...; ...
       rslt_mux_expr, [''],      /// result combining expr.: ({32{$is_[mnemonic]_instr}} & $[mnemonic]_rslt) | ...
@@ -1024,7 +1025,7 @@
           m5_eq(m5_mnemonic, JALR),
       [
          /Format should be, e.g. LB a0, 0(a2)
-         var_regex(m5_fields, ['^\(\w+\),\s*\(-?\w+\)(\(\w+\))$'], (r1, imm, r2))
+         var_regex(m5_fields, ['^\(\w+\),\s*\(-?\w+\)(\(\w+\))$'], (r2, imm, r1))
          ~if_so([
             ~asm(m5_mnemonic, m5_r1, m5_r2, m5_imm)
          ])
@@ -1044,12 +1045,10 @@
       ~else([
          /DEBUG(['Typical instruction: ']m5_mnemonic[''](m5_fields))
          /Format, any number of comma-separated fields: e.g. ADDI t0, t2, 1
-         if_neq(m5_fields, [''], [
-            set(fields, [', ']m5_fields)
-         ])
-         var_regex(m5_fields, ['^\(,\s*\w+\)*$'], (dummy))
+         var(comma_fields, m5_if_neq(m5_fields, [''], ['[', ']'])m5_fields)
+         var_regex(m5_comma_fields, ['^\(,\s*[0-9a-zA-Z_\-]+\)*$'], (dummy))
          ~if_so([
-            ~asm(m5_mnemonic\m5_eval(m5_fields))
+            ~asm(m5_mnemonic\m5_eval(m5_comma_fields))
          ])
          else(['m5_bad()'])
       ])
