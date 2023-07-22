@@ -263,10 +263,10 @@
   })
   fn(instrS, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, ..., {
      ~instr_funct3($@, ['no_dest'])
-     fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]imm, ^funct3, ^mnemonic, {
+     fn(['asm_']m5_mnemonic, [1]src1, [2]src2, [3]imm, ^funct3, ^mnemonic, {
         asm_instr_str(S, m5_mnemonic, m5_fn_args())
         set(imm, m5_immediate_field_to_bits(12, m5_imm))
-        ~quote(['{']m5_asm_imm_field(m5_imm, 12, 11, 5)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_reg(m5_dest)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_imm_field(m5_imm, 12, 4, 0)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
+        ~quote(['{']m5_asm_imm_field(m5_imm, 12, 11, 5)[', ']m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', ']m5_asm_imm_field(m5_imm, 12, 4, 0)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrB, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, ..., {
@@ -1018,16 +1018,22 @@
       /Parse format based on instruction characteristics.
       
       var(op5, m5_get(['op5_of_instr_']m5_mnemonic))
+      var(is_store, m5_eq(m5_op5, m5_op5_named_STORE) ||
+                    m5_eq(m5_op5, m5_op5_named_STORE_FP))
       ~if(m5_eq(m5_op5, m5_op5_named_LOAD) ||
           m5_eq(m5_op5, m5_op5_named_LOAD_FP) ||
-          m5_eq(m5_op5, m5_op5_named_STORE) ||
-          m5_eq(m5_op5, m5_op5_named_STORE_FP) ||
+          m5_is_store ||
           m5_eq(m5_mnemonic, JALR),
       [
          /Format should be, e.g. LB a0, 0(a2)
-         var_regex(m5_fields, ['^\(\w+\),\s*\(-?\w+\)(\(\w+\))$'], (r2, imm, r1))
+         var_regex(m5_fields, ['^\(\w+\),\s*\(-?\w+\)(\(\w+\))$'], (r1, imm, rs1))
          ~if_so([
-            ~asm(m5_mnemonic, m5_r1, m5_r2, m5_imm)
+            /Loads and stores have different instruction types and formats.
+            ~if(m5_is_store, [
+               ~asm(m5_mnemonic, m5_rs1, m5_r1, m5_imm)
+            ], [
+               ~asm(m5_mnemonic, m5_r1, m5_rs1, m5_imm)
+            ])
          ])
          else(['m5_bad()'])
       ])
