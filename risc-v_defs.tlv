@@ -317,13 +317,14 @@
   /Specifically for assembler.
 
   /For labels:
+  / TODO: These must support C-ext labels that are not 32-bit aligned.
   /m5_signed_int_to_fixed_binary(digits, value)
   /Returns a string of 0s and 1s, representing the zero-padded binary value.
   /Args:
   /  digits: number of binary digits
   /  value: value (in the range -2**(digits-1) .. 2**(digits-1)-1)
   macro(signed_int_to_fixed_binary, ['m5_if(m5_calc($2 < 0), ['m5_if($2 < -(2 ** ($1 - 1)), ['m5_error(['Value $2 out of range for $1-bit signed integer.'])'])m5_calc($2 + 2 ** $1, 2, ['$1'])'], ['m5_if($2 >= 2 ** ($1 - 1), ['m5_error(['Value $2 out of range for $1-bit signed integer.'])'])m5_calc($2, 2, ['$1'])'])'])
-  macro(define_label, ['m5_universal_var(label_$1_addr, $2)'])
+  macro(define_label, ['m5_universal_var(label_$1_addr, $2)m5_universal_var(label_$1_byte_addr, m5_calc($2 * 4))'])
   /label_to_imm(label, bit-width, num-instrs): Convert a label (excluding :) to an immediate for current m5_NUM_INSTRS.
   macro(label_to_imm, ['m5_signed_int_to_fixed_binary($2, m5_if_var_def(['label_$1_addr'], ['m5_calc((m5_get(label_$1_addr) - ['$3']) * 4)'], ['m5_error(['No assembler label "']$1['".'])0']))'])
   
