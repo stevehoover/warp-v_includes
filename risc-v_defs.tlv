@@ -125,7 +125,7 @@
   /m5_asm_<MNEMONIC> output for funct3 or rm, returned in unquoted context so arg references can be produced. 'rm' is always the last m5_asm_<MNEMONIC> arg.
   /  Args: $1: MNEMONIC
   /        $2: funct3 field of instruction definition (or 'rm')
-  macro(asm_funct3, ['{
+  macro(asm_funct3, {
      ~if_eq($2, rm, [
         ~(['3'b'])
         ~if_var_def(rv__rm_$3_arg, [
@@ -137,7 +137,7 @@
      ], [
         ~localparam_value(['$1_INSTR_FUNCT3'])
      ])
-  }'])
+  })
   
   /Opcode + funct3 + funct7 (R-type, R2-type). $@ as for m5_instrX(..), $7: MNEMONIC, $8: number of bits of leading bits of funct7 to interpret. If 5, for example, use the term funct5, $9: (opt) for R2, the r2 value.
   macro(instr_funct7, [
@@ -379,7 +379,7 @@
   /Extract bits from a binary immediate value.
   /m5_asm_imm_field(binary-imm, imm-length, max-bit, min-bit)
   /E.g. m5_asm_imm_field(101011, 17, 7, 3) => 5'b00101
-  macro(asm_imm_field, ['m5_calc($3 - $4 + 1)'b['\m5_substr_eval(m5_asm_zero_ext($1, $2), ']m5_calc($2 - $3 - 1)[', ']m5_calc($3 - $4 + 1)[')']'])
+  macro(asm_imm_field, ['m5_calc($3 - $4 + 1)'b\m5_substr_eval(m5_asm_zero_ext($1, $2), m5_calc($2 - $3 - 1), m5_calc($3 - $4 + 1))'])
   /Register operand.
   macro(asm_reg, ['5'd\m5_substr_eval(m5_abi_to_reg(['$1']), 1)'])
 
