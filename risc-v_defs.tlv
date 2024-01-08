@@ -1,5 +1,23 @@
 \m5_TLV_version 1d: tl-x.org
 \m5
+   /Definitions are based on enabled extensions. Default them to I only.
+   default_var(
+      EXT_I, 1,
+      EXT_E, 0,
+      EXT_M, 0,
+      EXT_A, 0,
+      EXT_F, 0,
+      EXT_D, 0,
+      EXT_Q, 0,
+      EXT_L, 0,
+      EXT_C, 0,
+      EXT_B, 0,
+      EXT_J, 0,
+      EXT_T, 0,
+      EXT_P, 0,
+      EXT_V, 0,
+      EXT_N, 0)
+  
   /Instruction field values for each instruction are defined as localparams and as M4 defines. Assembly uses one or the other
   /depending on m5_use_localparams.
   /Define localparam and m5_ constant.
