@@ -350,7 +350,7 @@
   
   /m5_asm_target(width, target): Output the offset for a given branch target arg of the form :label or 1111111111000, with the given bit width.
   fn(asm_target, [1], [2], {
-     ~if_regex(['$2'], ['^:?\(.?[a-zA-Z][\w(, )]*\|[0-9]+[fb]\)$'], (target), [
+     ~if_regex(['$2'], ['^:?\(\.?[a-zA-Z][a-zA-Z_(, )]*\|[0-9]+[fb]\)$'], (target), [
         /Legacy M4-style label references (starting w/ ":"), or
         /Named label target.
         /Note: The label may not have been encountered yet.
@@ -1130,7 +1130,7 @@
          
          /DEBUG(['Found directive: ']m5_directive m5_fields)
       
-      }, ['^\(.?[\w(, )]+\):\s*$'], (label), {
+      }, ['^\(.?[a-zA-Z_(, )]+\):\s*$'], (label), {
          
          /
          /Label
