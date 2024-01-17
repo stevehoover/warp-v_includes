@@ -855,7 +855,7 @@
       /_pseudoinstr(FSFLAGSI, 1, CSRRWI, zero, fflags, #1)
       /TODO: Some didn't fit the mold:
       /Many translate to multiple instructions.
-      /Some accept a subset of args.
+      /Some accept a subset of args. These are handled in assemble_instr.
       /  jal offset	=> jal ra, offset
       /  jalr rs =>	jalr ra, rs, 0
       /  fence =>	fence iorw, iorw
@@ -1051,7 +1051,7 @@
       ~if(m5_eq(m5_op5, m5_op5_named_LOAD) ||
           m5_eq(m5_op5, m5_op5_named_LOAD_FP) ||
           m5_is_store ||
-          m5_eq(m5_mnemonic, JALR),
+          (m5_eq(m5_mnemonic, JALR) && (m5_nargs(m5_eval(m5_fields)) == 2)),  /// I've seen docs for JALR x1, 0(t1) and JALR x1, t1, 0.
       [
          /Format should be, e.g. LB a0, 0(a2)
          var_regex(m5_fields, ['^\(\w+\),\s*\(-?\w+\)(\(\w+\))$'], (r1, imm, rs1))
@@ -1077,7 +1077,23 @@
          ~process_fields(m5_eval(m5_fields))
       ])
       ~else([
-         DEBUG(['Typical instruction: ']m5_mnemonic[''](m5_fields))
+         /DEBUG(['Typical instruction: ']m5_mnemonic[''](m5_fields))
+
+         /Some instructions have optional arguments.
+         case(mnemonic, JAL, [
+            if(m5_nargs(m5_eval(m5_fields)) == 1, [
+               set(fields, ['ra, ']m5_fields)
+            ])
+         ], JALR, [
+            if(m5_nargs(m5_eval(m5_fields)) == 1, [
+               set(fields, ['ra, ']m5_fields[', 0'])
+            ])
+         ], FENCE, [
+            if_eq(m5_fields, [''], [
+               set(fields, ['iorw, iorw'])
+            ])
+         ])
+
          /Format, any number of comma-separated fields: e.g. ADDI t0, t2, 1
          var(comma_fields, m5_if_neq(m5_fields, [''], ['[', ']'])m5_fields)
          var_regex(m5_comma_fields, ['^\(,\s*[-0-9a-zA-Z_\.]+\)*$'], (dummy))
@@ -1088,7 +1104,7 @@
       ])
       ~nl
    })
-   
+
    fn(assemble_line, line_cnt, line, {
       /DEBUG(Assembling line m5_line_cnt: m5_line)
       /Strip comment and trailing whitespace from m5_line.
