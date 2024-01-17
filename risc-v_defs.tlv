@@ -350,12 +350,12 @@
   
   /m5_asm_target(width, target): Output the offset for a given branch target arg of the form :label or 1111111111000, with the given bit width.
   fn(asm_target, [1], [2], {
-     ~if_regex(['$2'], ['^:?\(\.?[a-zA-Z][a-zA-Z_(, )]*\|[0-9]+[fb]\)$'], (target), [
+     ~if_regex(['$2'], ['^:?\(\.?[a-zA-Z][a-zA-Z_0-9(, )]*\|[0-9]+[fb]\)$'], (target), [
         /Legacy M4-style label references (starting w/ ":"), or
         /Named label target.
         /Note: The label may not have been encountered yet.
         /      This expression will be evaluated when the memory value is instantiated.
-        ~(['m5_label_to_imm(']m5_target[', $1, ']m5_NUM_INSTRS[')'])
+        ~(['m5_label_to_imm(']m5_clean_label(m5_target)[', $1, ']m5_NUM_INSTRS[')'])
      ])
      ~else([
         ~immediate_field_to_bits(['$1'], ['$2'])
@@ -1031,13 +1031,20 @@
    /Assemble
    /--------
    
+   /Labels have been seen such as "foo(int, int)".
+   /Remove (, ) chars from label... mmmm, seems to be okay to leave them in.
+   fn(clean_label, Label, {
+      /~translit(m5_Label, ['.(, )'], ['FIXXX'])
+      ~Label
+   })
+            
    /Assemble a real instruction (not a pseudoinstruction).
    fn(assemble_instr, mnemonic, fields, {
       macro(bad, ['m5_error(['Malformed instruction: ']m5_mnemonic[''](m5_fields))'])
-      
+
       /DEBUG(['Found instruction=: ']m5_mnemonic[''](m5_fields))
       /Parse format based on instruction characteristics.
-      
+
       var(op5, m5_get(['op5_of_instr_']m5_mnemonic))
       var(is_store, m5_eq(m5_op5, m5_op5_named_STORE) ||
                     m5_eq(m5_op5, m5_op5_named_STORE_FP))
@@ -1070,10 +1077,10 @@
          ~process_fields(m5_eval(m5_fields))
       ])
       ~else([
-         /DEBUG(['Typical instruction: ']m5_mnemonic[''](m5_fields))
+         DEBUG(['Typical instruction: ']m5_mnemonic[''](m5_fields))
          /Format, any number of comma-separated fields: e.g. ADDI t0, t2, 1
          var(comma_fields, m5_if_neq(m5_fields, [''], ['[', ']'])m5_fields)
-         var_regex(m5_comma_fields, ['^\(,\s*[0-9a-zA-Z_\-]+\)*$'], (dummy))
+         var_regex(m5_comma_fields, ['^\(,\s*[-0-9a-zA-Z_\.]+\)*$'], (dummy))
          ~if_so([
             ~asm(m5_mnemonic\m5_eval(m5_comma_fields))
          ])
@@ -1090,25 +1097,25 @@
          set(line, m5_substr(m5_line, 0, m5_pos))
       ])
       strip_trailing_whitespace_from(line)
-      
+
       /Parse (uncommented) line, producing IMem value definition and commented SV line.
       ~if_regex(m5_line, ['^\(\s*\)$'], (dummy), {
-         
+
          /
          /Empty line
          /
-         
+
          /DEBUG(['Found empty line.'])
-      
+
       }, ['^\s+\(\w+\)\s*\(.*\)'], (mnemonic, fields), {
-         
+
          /
          /Instruction
          /
-         
+
          /Convert given mnemonic to internal mnemonic, e.g. sext.b -> SEXT_B
          set(mnemonic, m5_translit(m5_uppercase(m5_mnemonic), ['.'], ['_']))
-      
+
          if_def(['_expanding_pseudoinstr_']m5_mnemonic, [
             /Pseudoinstruction that expands to multiple instructions.
             error(['This pseudoinstruction is not yet supported.'])
@@ -1121,23 +1128,23 @@
             /Instruction (not a pseudoinstruction)
             ~assemble_instr(m5_mnemonic, m5_fields)
          ])
-         
-      }, ['^\.\(\w+\)\(\)?'], (directive, fields), {
-      
-         /
-         /Directive
-         /
-         
-         /DEBUG(['Found directive: ']m5_directive m5_fields)
-      
-      }, ['^\(.?[a-zA-Z_(, )]+\):\s*$'], (label), {
-         
+
+      }, ['^\(\.?[a-zA-Z0-9_(, )]+\):\s*$'], (label), {
+
          /
          /Label
          /
-         
-         define_label(m5_label, m5_NUM_INSTRS)
-      
+
+         define_label(m5_clean_label(m5_label), m5_NUM_INSTRS)
+
+      }, ['^\.\(\w+\)\(\)?'], (directive, fields), {
+
+         /
+         /Directive
+         /
+
+         /DEBUG(['Found directive: ']m5_directive m5_fields)
+
       }, {
          error(['Could not parse assembly code line: "']m5_line['"'])
       })
