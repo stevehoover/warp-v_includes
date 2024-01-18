@@ -853,6 +853,9 @@
       /_pseudoinstr(FSFLAGS, 1, CSRRW, zero, fflags, #1)
       _pseudoinstr(FSFLAGSI, 2, CSRRWI, #1, fflags, #2)
       /_pseudoinstr(FSFLAGSI, 1, CSRRWI, zero, fflags, #1)
+      _pseudoinstr(CALL, 1, JALR, ra, #1)     /// TODO: This supports near CALL only. Proper support requires a distance check and AUIPC for far calls.
+      _pseudoinstr(TAIL, 1, JALR, zero, #1)   /// TODO: This supports near TAIL only. Proper support requires a distance check and AUIPC for far calls.
+      _pseudoinstr(LI, 2, ADDI, #1, zero, #2) /// TODO: This supports only 12-bit immediates. Proper support requires LUI and ADDI and for > 20 bits, SLLI.
       /TODO: Some didn't fit the mold:
       /Many translate to multiple instructions.
       /Some accept a subset of args. These are handled in assemble_instr.
@@ -875,13 +878,13 @@
       _exp_pseudoinstr(FLD)
       _exp_pseudoinstr(FSW)
       _exp_pseudoinstr(FSD)
-      _exp_pseudoinstr(LI)
+      _exp_pseudoinstr(LI)    /// (partial support above should be replaced)
       _exp_pseudoinstr(SEXT_B)
       _exp_pseudoinstr(SEXT_H)
       _exp_pseudoinstr(ZEXT_H)
       _exp_pseudoinstr(ZEXT_W)
-      _exp_pseudoinstr(CALL)
-      _exp_pseudoinstr(TAIL)
+      _exp_pseudoinstr(CALL)   /// (partial support above should be replaced)
+      _exp_pseudoinstr(TAIL)   /// (partial support above should be replaced)
       _exp_pseudoinstr()
       _exp_pseudoinstr()
       _exp_pseudoinstr()
