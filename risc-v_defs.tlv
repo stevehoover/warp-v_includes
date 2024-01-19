@@ -1099,7 +1099,7 @@
 
          /Format, any number of comma-separated fields: e.g. ADDI t0, t2, 1
          var(comma_fields, m5_if_neq(m5_fields, [''], ['[', ']'])m5_fields)
-         var_regex(m5_comma_fields, ['^\(,\s*[-0-9a-zA-Z_\.]+\)*$'], (dummy))
+         var_regex(m5_comma_fields, ['^\(,\s*\.?[-0-9a-zA-Z_]+\(([-0-9a-zA-Z_, ]*)\)?\)*$'], (dummy1, dummy2))
          ~if_so([
             ~asm(m5_mnemonic\m5_eval(m5_comma_fields))
          ])
