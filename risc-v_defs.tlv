@@ -1129,7 +1129,7 @@
 
          /DEBUG(['Found empty line.'])
 
-      }, ['^\s+\(\w+\)\s*\(.*\)'], (mnemonic, fields), {
+      }, ['^\s+\(\w+\)\s+\(.*\)'], (mnemonic, fields), {
 
          /
          /Instruction
@@ -1159,7 +1159,7 @@
 
          define_label(m5_clean_label(m5_label), m5_NUM_INSTRS)
 
-      }, ['^\.\(\w+\)\(.*\)?'], (directive, fields), {
+      }, ['^\s+\.\(\w+\)\s+\(.*\)\(.*\)$'], (directive, fields), {
 
          /
          /Directive
