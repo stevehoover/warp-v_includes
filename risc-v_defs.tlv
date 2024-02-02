@@ -1165,9 +1165,11 @@
          /Directive
          /
 
-         if_eq(m5_directive, word, [
+         ~if_eq(m5_directive, word, [
             set_instr_str(m5_fields)
-            ~(32'h\m5_immediate_field_to_bits(32, m5_fields))
+            universal_var(['instr']m5_NUM_INSTRS, 32'h\m5_immediate_field_to_bits(32, m5_fields))
+            ~(['/']['/ Inst #']m5_NUM_INSTRS: m5_fields)
+            increment(NUM_INSTRS)
          ])
 
          /DEBUG(['Found directive: ']m5_directive m5_fields)
