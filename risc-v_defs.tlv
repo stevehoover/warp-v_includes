@@ -404,9 +404,12 @@
   macro(asm_reg, ['5'd\m5_substr_eval(m5_abi_to_reg(['$1']), 1)'])
 
   /For debug, a string for an asm instruction.
+  macro(set_instr_str, [
+     universal_var(['instr_str']m5_NUM_INSTRS, ['$1']m5_substr_eval(['                                        '], m5_length(['$1'])))
+  ])
   macro(asm_instr_str, [
      var(Str, ['($1) $2 ']m4_quote(m5_shift(m5_shift($@))))
-     universal_var(['instr_str']m5_NUM_INSTRS, m5_Str\m5_substr_eval(['                                        '], m5_length(m5_Str)))
+     set_instr_str(m5_Str)
   ])
   /Assemble an instruction.
   /m5_asm(FOO, ...) defines m5_inst# as m5_comma_shiftFOO(...), counts instructions in m5_NUM_INSTRS ,and outputs a comment.
@@ -1156,11 +1159,16 @@
 
          define_label(m5_clean_label(m5_label), m5_NUM_INSTRS)
 
-      }, ['^\.\(\w+\)\(\)?'], (directive, fields), {
+      }, ['^\.\(\w+\)\(.*\)?'], (directive, fields), {
 
          /
          /Directive
          /
+
+         if_eq(m5_directive, word, [
+            set_instr_str(m5_fields)
+            ~(32'h\m5_immediate_field_to_bits(32, m5_fields))
+         ])
 
          /DEBUG(['Found directive: ']m5_directive m5_fields)
 
