@@ -1129,7 +1129,7 @@
 
          /DEBUG(['Found empty line.'])
 
-      }, ['^\s+\(\w+\)\s+\(.*\)'], (mnemonic, fields), {
+      }, ['^\s+\(\w+\)\(\s+\|$\)\(.*\)'], (mnemonic, after_mnemonic, fields), {
 
          /
          /Instruction
