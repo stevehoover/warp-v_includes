@@ -2,6 +2,55 @@
 \m5
   use(m5-1.0)
 
+  / RISC-V definitions (created for the WARP-V processor and perhaps slightly tied to it).
+  /
+  / This file is all M5 definitions (previously M4, and will be Tilde), not TL-Verilog hardware description.
+  / It was written and maintained during the evolution of this preprocessor family. Thus is is a
+  / poor representation of the latest features and best practices. It is also not well documented.
+  / It does, however, successfully demonstrates the potential for code construction using macro
+  / preprocessing. These are easier to learn and apply for simple scenarios, and this file
+  / explores that they (well, M5 in particular) can be used for more complex things.
+  / (Despite this, TL-Verilog is expected to evolve to include code construction
+  / features with type checking and all that good stuff.)
+  /
+  / In particular, this file enables WARP-V to demonstrate that:
+  /
+  /  | TL-Verilog code, using M5, is able to construct hardware flexibly, to the extent that
+  /  | the contents of a hard-coded instruction memory can be defined by writing assembly code
+  /  | inline within the hardware description.
+  /
+  /
+  / Assembler
+  / ---------
+  /
+  / General:
+  /
+  / As we characterize RISC-V instructions, we define hardware and also create an assembler.
+  /
+  / This assembler is intended for educational and demonstration purposes. It is intended to support hand-coded
+  / assembly and compiler-generated assembly code for small programs. These simplifying assumptions allow
+  / us to use consistent pseudo-instruction expansions and to avoid the complexity of a full assembler.
+  / This and other restrictions are documented in the comments below.
+  /
+  / Branch Pseudo-Instructions:
+  /
+  / Pseudo-branch instructions ideally expand differently depending upon the distance of the branch,
+  / which may not be known on the first pass, and determining this perfectly is circularly dependent
+  / on the exapansions themselves. To avoid this complexity:
+  /   - We assume all code fits within 1 MiB.
+  /   - Branch instructions (e.g. BEQ) should not be expanded and thus have a  ±4 KB range limit, but branch
+  /     pseudo-instructions (e.g. BEQZ) should support long branches. This is inconsistent and is only for legacy
+  /     reasons. We do not currently support pseudo-branch expansion and report an error if the branch
+  /     is out of range. If compilers are found to depend on this expansion, we can add a mode that will
+  /     always expand branch pseudo-instructions for correctness (but not optimality).
+  /
+  / Labels:
+  /   - Backward and forward references are supported to a limited extent. ...
+  /   - %modifier(symbol) is supported to a limited extent. Supported modifiers include:
+  /     %hi, %lo, %pcrel_hi, %pcrel_lo. %pcrel_lo's argument is a (generally backward-reference) label.
+  /     It is typically (1b), where 1: is the label of the previous instruction. We support specifically
+  /     that.
+
   /Definitions are based on enabled extensions. Default them to I only.
   default_var(
      EXT_I, 1,
@@ -246,9 +295,9 @@
      ~instr_funct3($@)
      fn(['asm_']m5_mnemonic, [1]dest, [2]src1, [3]imm, ^funct3, ^mnemonic, {
         asm_instr_str(I, m5_mnemonic, m5_fn_args())
-        /TODO: This isn't working with imm vs. imm2. Maybe because function isn't properly using vars for parameters?
-        var(imm2, m5_immediate_field_to_bits(12, m5_imm))
-        ~quote(['{12'b']m5_imm2[', ']m5_asm_reg(m5_src1)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT3'])[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
+        /Need to permit addresses, so treat as a target.
+        var(imm2, ['m5_asm_imm_field(']m5_asm_target(12, m5_imm)[', 12, 11, 0)'])
+        ~quote(['{']m5_imm2[', ']m5_asm_reg(m5_src1)[', ']m5_localparam_value(m5_mnemonic['_INSTR_FUNCT3'])[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrIf, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, [5]imm_funct, ..., {
@@ -292,8 +341,9 @@
   fn(instrB, mnemonic, [1]width, [2]ext, [3]op5, [4]funct3, ..., {
      ~instr_funct3($@, no_dest)
      fn(['asm_']m5_mnemonic, [1]src1, [2]src2, [3]target, ^funct3, ^mnemonic, {
-        var(imm, m5_asm_target(13, m5_target))
         asm_instr_str(B, m5_mnemonic, m5_fn_args())
+        /TODO: m5_imm must be evaluated and gets evaluated multiple time; recode to do this once.
+        var(imm, m5_asm_target(13, m5_target))
         /m5_imm can be a label expression, so it's evaluation must be deferred, making the expressions below a bit messy.
         ~(['['{']m5_asm_imm_field(']m5_imm[', 13, 12, 12)[', ']m5_asm_imm_field(']m5_imm[', 13, 10, 5)[', ']'])
         ~quote(m5_asm_reg(m5_src2)[', ']m5_asm_reg(m5_src1)[', ']m5_asm_funct3(m5_mnemonic, m5_funct3)[', '])
@@ -303,10 +353,14 @@
   })
   fn(instrU, mnemonic, [1]width, [2]ext, [3]op5, ..., {
      ~instr_no_func(m5_mnemonic, m5_op5)
-     fn(['asm_']m5_mnemonic, [1]dest, [2]imm, ^mnemonic, {
+     fn(['asm_']m5_mnemonic, [1]dest, [2]imm_expr, ^mnemonic, {
         asm_instr_str(U, m5_mnemonic, m5_fn_args())
-        set(imm, m5_immediate_field_to_bits(20, m5_imm))
-        ~quote(['{']m5_asm_imm_field(m5_imm, 20, 19, 0)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
+        var(imm, m5_asm_target(20, m5_imm_expr))
+        /set(imm, m5_immediate_field_to_bits(20, m5_imm))
+        /~quote(['{']m5_asm_imm_field(m5_imm, 20, 19, 0)[', ']m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
+        /m5_imm can be a label expression, so it's evaluation must be deferred, making the expressions below a bit messy.
+        ~(['['{']m5_asm_imm_field(']m5_imm[', 20, 19, 0)[', ']'])
+        ~quote(m5_asm_reg(m5_dest)[', ']m5_localparam_value(m5_mnemonic['_INSTR_OPCODE'])['}'])
      })
   })
   fn(instrJ, mnemonic, [1]width, [2]ext, [3]op5, ..., {
@@ -337,31 +391,71 @@
   /Specifically for assembler.
 
   /For labels:
-  / TODO: These must support C-ext labels that are not 32-bit aligned.
-  /m5_signed_int_to_fixed_binary(digits, value)
-  /Returns a string of 0s and 1s, representing the zero-padded binary value.
-  /Args:
-  /  digits: number of binary digits
-  /  value: value (in the range -2**(digits-1) .. 2**(digits-1)-1)
-  macro(signed_int_to_fixed_binary, ['m5_if(m5_calc($2 < 0), ['m5_if($2 < -(2 ** ($1 - 1)), ['m5_error(['Value $2 out of range for $1-bit signed integer.'])'])m5_calc($2 + 2 ** $1, 2, ['$1'])'], ['m5_if($2 >= 2 ** ($1 - 1), ['m5_error(['Value $2 out of range for $1-bit signed integer.'])'])m5_calc($2, 2, ['$1'])'])'])
   macro(define_label, ['m5_universal_var(label_$1_addr, $2)m5_universal_var(label_$1_byte_addr, m5_calc($2 * 4))'])
-  /label_to_imm(label, bit-width, num-instrs): Convert a label (excluding :) to an immediate for current m5_NUM_INSTRS.
-  macro(label_to_imm, ['m5_signed_int_to_fixed_binary($2, m5_if_var_def(['label_$1_addr'], ['m5_calc((m5_get(label_$1_addr) - ['$3']) * 4)'], ['m5_error(['No assembler label "']$1['".'])0']))'])
-  
-  /m5_asm_target(width, target): Output the offset for a given branch target arg of the form :label or 1111111111000, with the given bit width.
-  fn(asm_target, [1], [2], {
-     ~if_regex(['$2'], ['^:?\(\.?[a-zA-Z][a-zA-Z_0-9(, )]*\|[0-9]+[fb]\)$'], (target), [
-        /Legacy M4-style label references (starting w/ ":"), or
-        /Named label target.
+  /label_to_bin(label, width, num-instrs): Convert a label to a 32-bit string of "0"s and "1"s representing a relative offset from
+  /                                        num-instrs (or 0 for absolute addr). Absolute addresses must not have an MSB==1 (no check).
+  macro(label_to_bin, [
+     /Decimal immediate value.
+     var(imm_dec, m5_calc(m5_label_to_addr(['$1'])[' - ($3) * 4']))
+     /32-bit binary immediate string, e.g. ['11111...']
+     var(ret32, m5_if(m5_imm_dec < 0, ['['1']m5_calc(m5_imm_dec & 0x7FFFFFFF, 2, 31)'], ['['0']m5_calc(m5_imm_dec, 2, 31)']))
+     /Check width.
+     if_neq(m5_length(m5_ret32), 32, ['m5_error(['Converted label "$1" to "']m5_ret32['" which is not a 32-bit binary string.'])']) 
+     /Make sure unused upper bits and the sign bit are all zeros or all ones.
+     if_regex(m5_substr(m5_ret32, 0, m5_calc(33 - ['$2'])), [^m5_if(m5_imm_dec < 0, 1, 0)], (), [
+        error(['Label $1 produces an immediate field that is out of range.'])
+     ])
+     /Truncate and return.
+     ~substr(m5_ret32, m5_calc(32-['$2']), ['$2'])
+  ])
+  /label_to_addr(<label>)
+  macro(label_to_addr, ['m5_if_var_def(['label_$1_addr'], ['m5_calc(m5_get(label_$1_addr) * 4)'], ['m5_error(['No assembler label "']$1['".'])0'])'])
+  /-/label_to_rel_addr(<label>, <NUM_INSTRS>)
+  /-macro(label_to_rel_addr, ['m5_calc(m5_label_to_addr(['$1']) - (['$2'] * 4)'])
+     
+  /m5_asm_target(width, target): Given a branch/jump target expression (and, for checking, the max width for the signed binary immediate
+  /   value for the instruction) outputs an expression that, once all labels are defined, evaluates to the offset as a string of "0"s and "1"s.
+  universal_var(pcrel_hi_label, ['NO_PCREL_HI'])  /// Symbol used for most recent %pcrel_hi label until %pcrel_lo, or ['NO_PCREL_HI'].
+  fn(asm_target, width, target, {
+     /Accept %foo(...)
+     ~if_regex(m5_target, ['^%\([a-zA-Z0-9_]*\)(\(.*\))'], (func, label), [
+        /% macro
+        var(out, m5_case(func, hi, [
+           if_neq(m5_width, 20, ['m5_error(['%hi assembler macro uses for an immediate field that is not 20 bits.'])'])
+           ~(['m5_calc(m5_label_to_addr(']m5_label[') >> 12, 2, 20)'])
+        ], lo, [
+           if_neq(m5_width, 12, ['m5_error(['%lo assembler macro uses for an immediate field that is not 12 bits.'])'])
+           ~(['m5_calc(m5_label_to_addr(']m5_label[') & 0xFFF, 2, 12)'])
+        ], pcrel_hi, [
+           if_neq(m5_width, 20, ['m5_error(['%pcrel_hi assembler macro uses for an immediate field that is not 20 bits.'])'])
+           /offset_hi is [31:12] of PC-relative offset + 0x800. 0x800 compensates for the sign-extension of [11:0], added in subsequently.
+           /We add 0x800 by subtracting 0x200 from NUM_INSTRS.
+           ~(['m5_substr(m5_label_to_bin(']m5_label[', 32, ']m5_NUM_INSTRS[' - 0x200), 0, 20)'])
+           set(pcrel_hi_label, m5_label)
+        ], pcrel_lo, [
+           /We support specifically the case where the argument is "1b" and this refers to the previous
+           /instruction. Check for that.
+           if_neq(m5_label, ['PREV'], [  /// "PREV" is used by pseudo instructions to reference the previous instruction without the use of a label.
+              if_neq(m5_label, ['1b'], ['m5_error(['%pcrel_lo(']m5_label[') encountered, but only %pcrel_lo(1b) is supported.'])'])
+              if_neq(m5_label_to_bin(['1'], 32, m5_NUM_INSTRS), ['11111111111111111111111111111100'], ['m5_error(['Unsupported use of %pcrel_lo(']m5_label['). Must use "1b" to reference previous instruction.'])'])
+           ])
+           if_neq(m5_width, 12, ['m5_error(['%pcrel_lo assembler macro uses for an immediate field that is not 12 bits.'])'])
+           ~(['m5_substr(m5_label_to_bin(']m5_pcrel_hi_label[', 32, ']m5_NUM_INSTRS[' - 1), 20, 12)'])
+           set(pcrel_hi_label, ['NO_PCREL_HI'])
+        ], ['m5_error(['Unrecognized assembly % macro: %']m5_func.)']))
+        ~out
+     ], ['^:?\(\.?[a-zA-Z][a-zA-Z_0-9(, )]*\|[0-9]+[fb]\)$'], (label), [
+        /Label-based target, including:
+        /  - Legacy M4-style label references (starting w/ ":"), or
+        /  - Named label target.
         /Note: The label may not have been encountered yet.
         /      This expression will be evaluated when the memory value is instantiated.
-        ~(['m5_label_to_imm(']m5_clean_label(m5_target)[', $1, ']m5_NUM_INSTRS[')'])
-     ])
-     ~else([
-        ~immediate_field_to_bits(['$1'], ['$2'])
+        ~(['m5_label_to_bin(']m5_label[', ']m5_width[', ']m5_NUM_INSTRS[')'])
+     ], [
+        ~immediate_field_to_bits(m5_width, m5_target)
      ])
   })
-  
+
   /Compute binary negative, given a string of 0/1 starting w/ the sign bit.
   fn(_asm_binary_negative, bin, {
      /Flip all the bits and add one.
@@ -801,134 +895,168 @@
       /~instr(R, 64, B, 01110, 111, 0100100, BFPW)
       
       /Pseudoinstructions that are replaced by a single instruction.
-      _pseudoinstr(MV, 2, ADDI, #1, #2, 0)
-      _pseudoinstr(NOT, 2, XORI, #1, #2, 111111111111)
-      _pseudoinstr(NEG, 2, SUB, #1, zero, #2)
-      _pseudoinstr(NEGW, 2, SUBW, #1, zero, #2)
-      _pseudoinstr(SEXT_W, 2, ADDIW, #1, #2, 0)
-      _pseudoinstr(ZEXT_B, 2, ANDI, #1, #2, 11111111)
-      _pseudoinstr(SEQZ, 2, SLTIU, #1, #2, 1)
-      _pseudoinstr(SNEZ, 2, SLTU, #1, zero, #2)
-      _pseudoinstr(SLTZ, 2, SLT, #1, #2, zero)
-      _pseudoinstr(SGTZ, 2, SLT, #1, zero, #2)
-      _pseudoinstr(FMV_S, 2, FSGNJ_S, #1, #2, #2)
-      _pseudoinstr(FABS_S, 2, FSGNJX_S, #1, #2, #2)
-      _pseudoinstr(FNEG_S, 2, FSGNJN_S, #1, #2, #2)
-      _pseudoinstr(FMV_D, 2, FSGNJ_D, #1, #2, #2)
-      _pseudoinstr(FABS_D, 2, FSGNJX_D, #1, #2, #2)
-      _pseudoinstr(FNEG_D, 2, FSGNJN_D, #1, #2, #2)
-      _pseudoinstr(BEQZ, 2, BEQ, #1, zero, #2)
-      _pseudoinstr(BNEZ, 2, BNE, #1, zero, #2)
-      _pseudoinstr(BLEZ, 2, BGE, zero, #1, #2)
-      _pseudoinstr(BGEZ, 2, BGE, #1, zero, #2)
-      _pseudoinstr(BLTZ, 2, BLT, #1, zero, #2)
-      _pseudoinstr(BGTZ, 2, BLT, zero, #1, #2)
-      _pseudoinstr(BGT, 3, BLT, #2, #1, #3)
-      _pseudoinstr(BLE, 3, BGE, #2, #1, #3)
-      _pseudoinstr(BGTU, 3, BLTU, #2, #1, #3)
-      _pseudoinstr(BLEU, 3, BGEU, #2, #1, #3)
-      _pseudoinstr(J, 1, JAL, zero, #1)
-      _pseudoinstr(JR, 1, JALR, zero, 0(#1))
-      _pseudoinstr(RET, 0, JALR, zero, 0(ra))
-      _pseudoinstr(RDINSTRET, 1, CSRRS, #1, instret, zero)   /// TODO: Fix instret and other CSR use below.
-      _pseudoinstr(RDINSTRETH, 1, CSRRS, #1, instreth, zero)
-      _pseudoinstr(RDCYCLE, 1, CSRRS, #1, cycle, zero)
-      _pseudoinstr(RDCYCLEH, 1, CSRRS, #1, cycleh, zero)
-      _pseudoinstr(RDTIME, 1, CSRRS, #1, time, zero)
-      _pseudoinstr(RDTIMEH, 1, CSRRS, #1, timeh, zero)
-      _pseudoinstr(CSRR, 2, CSRRS, #1, #2, zero)
-      _pseudoinstr(CSRW, 2, CSRRW, zero, #1, #2)
-      _pseudoinstr(CSRS, 2, CSRRS, zero, #1, #2)
-      _pseudoinstr(CSRC, 2, CSRRC, zero, #1, #2)
-      _pseudoinstr(CSRWI, 2, CSRRWI, zero, #1, #2)
-      _pseudoinstr(CSRSI, 2, CSRRSI, zero, #1, #2)
-      _pseudoinstr(CSRCI, 2, CSRRCI, zero, #1, #2)
-      _pseudoinstr(FRCSR, 1, CSRRS, #1, fcsr, zero)
-      _pseudoinstr(FSCSR, 2, CSRRW, #1, fcsr, #2)
-      /_pseudoinstr(FSCSR, 1, CSRRW, zero, fcsr, #1)  /// TODO: 1-operand version of the line above. Support this.
-      _pseudoinstr(FRRM, 1, CSRRS, #1, frm, zero)
-      _pseudoinstr(FSRM, 2, CSRRW, #1, frm, #2)
-      /_pseudoinstr(FSRM, 1, CSRRW, zero, frm, #1)
-      _pseudoinstr(FSRMI, 2, CSRRWI, #1, frm, #2)
-      /_pseudoinstr(FSRMI, 1, CSRRWI, zero, frm, #1)
-      _pseudoinstr(FRFLAGS, 1, CSRRS, #1, fflags, zero)
-      _pseudoinstr(FSFLAGS, 2, CSRRW, #1, fflags, #2)
-      /_pseudoinstr(FSFLAGS, 1, CSRRW, zero, fflags, #1)
-      _pseudoinstr(FSFLAGSI, 2, CSRRWI, #1, fflags, #2)
-      /_pseudoinstr(FSFLAGSI, 1, CSRRWI, zero, fflags, #1)
-      _pseudoinstr(CALL, 1, JALR, ra, #1)     /// TODO: This supports near CALL only. Proper support requires a distance check and AUIPC for far calls.
-      _pseudoinstr(TAIL, 1, JALR, zero, #1)   /// TODO: This supports near TAIL only. Proper support requires a distance check and AUIPC for far calls.
-      _pseudoinstr(LI, 2, ADDI, #1, zero, #2) /// TODO: This supports only 12-bit immediates. Proper support requires LUI and ADDI and for > 20 bits, SLLI.
-      /TODO: Some didn't fit the mold:
-      /Many translate to multiple instructions.
-      /Some accept a subset of args. These are handled in assemble_instr.
-      /  jal offset	=> jal ra, offset
-      /  jalr rs =>	jalr ra, rs, 0
-      /  fence =>	fence iorw, iorw
-      /**
-      _exp_pseudoinstr(LA)
-      _exp_pseudoinstr(LLA)
-      _exp_pseudoinstr(LGA)
-      _exp_pseudoinstr(LB)
-      _exp_pseudoinstr(LH)
-      _exp_pseudoinstr(LW)
-      _exp_pseudoinstr(LD)
-      _exp_pseudoinstr(SB)
-      _exp_pseudoinstr(SH)
-      _exp_pseudoinstr(SW)
-      _exp_pseudoinstr(SD)
-      _exp_pseudoinstr(FLW)
-      _exp_pseudoinstr(FLD)
-      _exp_pseudoinstr(FSW)
-      _exp_pseudoinstr(FSD)
-      _exp_pseudoinstr(LI)    /// (partial support above should be replaced)
-      _exp_pseudoinstr(SEXT_B)
-      _exp_pseudoinstr(SEXT_H)
-      _exp_pseudoinstr(ZEXT_H)
-      _exp_pseudoinstr(ZEXT_W)
-      _exp_pseudoinstr(CALL)   /// (partial support above should be replaced)
-      _exp_pseudoinstr(TAIL)   /// (partial support above should be replaced)
-      _exp_pseudoinstr()
-      _exp_pseudoinstr()
-      _exp_pseudoinstr()
-      _exp_pseudoinstr()
-      _exp_pseudoinstr()
-      **/
+      /Some instructions and pseudoinstructions have variants with different numbers of fields. These can be defined by separate
+      /calls to _pseudoinstr.
+      _pseudoinstr(MV, 2, ['ADDI, #1, #2, 0'])
+      _pseudoinstr(NOT, 2, ['XORI, #1, #2, -1'])
+      _pseudoinstr(NEG, 2, ['SUB, #1, zero, #2'])
+      _pseudoinstr(NEGW, 2, ['SUBW, #1, zero, #2'])
+      _pseudoinstr(SEXT_W, 2, ['ADDIW, #1, #2, 0'])
+      _pseudoinstr(ZEXT_B, 2, ['ANDI, #1, #2, 0xFF'])
+      _pseudoinstr(SEQZ, 2, ['SLTIU, #1, #2, 1'])
+      _pseudoinstr(SNEZ, 2, ['SLTU, #1, zero, #2'])
+      _pseudoinstr(SLTZ, 2, ['SLT, #1, #2, zero'])
+      _pseudoinstr(SGTZ, 2, ['SLT, #1, zero, #2'])
+      _pseudoinstr(FMV_S, 2, ['FSGNJ_S, #1, #2, #2'])
+      _pseudoinstr(FABS_S, 2, ['FSGNJX_S, #1, #2, #2'])
+      _pseudoinstr(FNEG_S, 2, ['FSGNJN_S, #1, #2, #2'])
+      _pseudoinstr(FMV_D, 2, ['FSGNJ_D, #1, #2, #2'])
+      _pseudoinstr(FABS_D, 2, ['FSGNJX_D, #1, #2, #2'])
+      _pseudoinstr(FNEG_D, 2, ['FSGNJN_D, #1, #2, #2'])
+      _pseudoinstr(BEQZ, 2, ['BEQ, #1, zero, #2'])
+      _pseudoinstr(BNEZ, 2, ['BNE, #1, zero, #2'])
+      _pseudoinstr(BLEZ, 2, ['BGE, zero, #1, #2'])
+      _pseudoinstr(BGEZ, 2, ['BGE, #1, zero, #2'])
+      _pseudoinstr(BLTZ, 2, ['BLT, #1, zero, #2'])
+      _pseudoinstr(BGTZ, 2, ['BLT, zero, #1, #2'])
+      _pseudoinstr(BGT, 3, ['BLT, #2, #1, #3'])
+      _pseudoinstr(BLE, 3, ['BGE, #2, #1, #3'])
+      _pseudoinstr(BGTU, 3, ['BLTU, #2, #1, #3'])
+      _pseudoinstr(BLEU, 3, ['BGEU, #2, #1, #3'])
+      _pseudoinstr(J, 1, ['JAL, zero, #1'])
+      _pseudoinstr(JR, 1, ['JALR, zero, 0(#1)'])
+      _pseudoinstr(RET, 0, ['JALR, zero, 0(ra)'])
+      _pseudoinstr(RDINSTRET, 1, ['CSRRS, #1, instret, zero'])   /// TODO: Fix instret and other CSR use below.
+      _pseudoinstr(RDINSTRETH, 1, ['CSRRS, #1, instreth, zero'])
+      _pseudoinstr(RDCYCLE, 1, ['CSRRS, #1, cycle, zero'])
+      _pseudoinstr(RDCYCLEH, 1, ['CSRRS, #1, cycleh, zero'])
+      _pseudoinstr(RDTIME, 1, ['CSRRS, #1, time, zero'])
+      _pseudoinstr(RDTIMEH, 1, ['CSRRS, #1, timeh, zero'])
+      _pseudoinstr(CSRR, 2, ['CSRRS, #1, #2, zero'])
+      _pseudoinstr(CSRW, 2, ['CSRRW, zero, #1, #2'])
+      _pseudoinstr(CSRS, 2, ['CSRRS, zero, #1, #2'])
+      _pseudoinstr(CSRC, 2, ['CSRRC, zero, #1, #2'])
+      _pseudoinstr(CSRWI, 2, ['CSRRWI, zero, #1, #2'])
+      _pseudoinstr(CSRSI, 2, ['CSRRSI, zero, #1, #2'])
+      _pseudoinstr(CSRCI, 2, ['CSRRCI, zero, #1, #2'])
+      _pseudoinstr(FRCSR, 1, ['CSRRS, #1, fcsr, zero'])
+      _pseudoinstr(FSCSR, 2, ['CSRRW, #1, fcsr, #2'])
+      _pseudoinstr(FSCSR, 1, ['CSRRW, zero, fcsr, #1'])
+      _pseudoinstr(FRRM, 1, ['CSRRS, #1, frm, zero'])
+      _pseudoinstr(FSRM, 2, ['CSRRW, #1, frm, #2'])
+      _pseudoinstr(FSRM, 1, ['CSRRW, zero, frm, #1'])
+      _pseudoinstr(FSRMI, 2, ['CSRRWI, #1, frm, #2'])
+      _pseudoinstr(FSRMI, 1, ['CSRRWI, zero, frm, #1'])
+      _pseudoinstr(FRFLAGS, 1, ['CSRRS, #1, fflags, zero'])
+      _pseudoinstr(FSFLAGS, 2, ['CSRRW, #1, fflags, #2'])
+      _pseudoinstr(FSFLAGS, 1, ['CSRRW, zero, fflags, #1'])
+      _pseudoinstr(FSFLAGSI, 2, ['CSRRWI, #1, fflags, #2'])
+      _pseudoinstr(FSFLAGSI, 1, ['CSRRWI, zero, fflags, #1'])
+      /CALL/TAIL currently support near call/tail only. Proper support requires a distance check and alternate expansions.
+      /This is circularly dependent upon knowing label addresses. Short of a multi-pass implementation, we could support
+      /long-calling with a mode.
+      _pseudoinstr(CALL, 1, ['JALR, ra, #1'])
+      _pseudoinstr(TAIL, 1, ['JALR, zero, #1'])
+      /Instructions with optional fields.
+      _pseudoinstr(JAL, 1, ['JAL, ra, #1'])
+      _pseudoinstr(JALR, 1, ['JALR, ra, #1, 0'])
+      _pseudoinstr(FENCE, 0, ['FENCE, iorw, iorw'])
+      
+      /Multiple-instruction pseudoinstruction expansions.
+      /Some depend on instruction fields and/or supported extensions. These are defined with a "__#" suffix and _choose_ext_pseudoinstr.
+      _pseudoinstr(LI__1, 2, ['ADDI, #1, zero, #2']) /// For 12-bit (signed) values.
+      _exp_pseudoinstr(32, I, LI__2, 2, ['LUI, #1, ['m5_calc(#2 >> 12)']'],
+                                        ['ADDI, #1, #1, ['m5_calc(#2 & 0xFFF)']'])  /// For > 12-bit (non-label) values.
+      _choose_exp_pseudoinstr(32, I, LI, 2, [
+         var(arg2, m5_fn_arg(2))
+         ~if_regex(m5_fn_arg(2), ['^-?\(0x\|0b\|\)[0-9A-Fa-f]+$'], (base), [
+            var(val, m5_calc(m5_arg2))
+            ~if(m5_val >= 2**11 || m5_val < -(2**11), 2, 1)
+         ], 2)
+      ])
+      
+      /These translate to multiple instructions.
+      _exp_pseudoinstr(32, I, LA, 2, ['AUIPC, #1, %pcrel_hi(#2)'],
+                                     ['ADDI, #1, #1, %pcrel_lo(PREV)'])
+      _exp_pseudoinstr(32, I, LLA, 2, ['AUIPC, #1, %pcrel_hi(#2)'],
+                                      ['ADDI, #1, #1, %pcrel_lo(PREV)'])
+      _exp_pseudoinstr(32, I, LGA, 2, ['AUIPC, #1, %hi(#2)'],
+                                      ['ADDI, #1, #1, %lo(PREV)'])
    ])
    
    
-   /Create macro _pseudoinstr(<mnemonic>, <num-pseudoinstr-args>, <actual-instr>, <actual-arg-1>, <actual-arg-2>, ...)
+   /Create macro _pseudoinstr(<mnemonic>, <num-pseudoinstr-args>, ['<actual-instr-1>, <actual-arg-1>, <actual-arg-2>, ...)[, ...])
    /Actual arg may contain, e.g. #2 to represent the second argument of the pseudoinstruction.
-   /E.g. _pseudoinstr(MV, 2, ADDI, #1, #2, 0)
-   /TODO: This would be cleaner using fn's at both levels and ^ in the inner fn.
-   macro(_pseudoinstr, [
-      if_var_def(instr_defined_$3, [   /// This conditions the pseudo-instruction on support for the same extension as the instruction it maps to.
-         macro(['_pseudoinstr_$1'], [
-            verify_num_args(['$1'], ['$2'], ']m5_quote(['$']['#'])[')
-            ~call(assemble_instr, ['$3'], ']']m5_nquote(2, m5_call(_pseudoinstr_args, m5_comma_shift(m5_shift(m5_shift($@)))))['[')
+   /E.g. _pseudoinstr(MV, 2, ['ADDI, #1, #2, 0'])
+   /This can define pseudoinstructions that expand to multiple instructions, but it should not be used
+   /directly for this purpose. Use _exp_pseudoinstr instead, which will use this as:
+   /E.g. _pseudoinstr(LA, 1, ['AUIPC #1, %pcrel_hi(#2)'],
+   /                         ['ADDI, #1, #1, %pcrel_lo(#2)'])
+   /This can also be used to create an expansion variant for use by _choose_exp_pseudoinstr.
+   fn(_pseudoinstr, Mnemonic, NumArgs, ..., [
+      if_var_def(['instr_defined_']m5_argn(1, $1), [   /// This conditions pseudo-instructions on support for the first instruction it maps to.
+         var(Code, m5__pseudoinstr_inner($@))
+         /Note that m5_Code cannot be inherited because it contains $-substitutions.
+         fn(['_pseudoinstr_']m5_Mnemonic['_']m5_NumArgs, ^Mnemonic, ^NumArgs, ..., [
+            verify_num_args(m5_Mnemonic, m5_NumArgs, m5_fn_arg_cnt())
+            ~eval(']m5_Code[')
          ])
       ])
    ])
+   /Produces macro body for pseudo-instruction.
+   /Varargs: the list of arg lists.
+   fn(_pseudoinstr_inner, ..., [
+      ~if($# > 0, [
+         ~_pseudoinstr_asm_instr($1)
+         ~call(_pseudoinstr_inner\m5_comma_shift($@))
+      ])
+   ])
+   /Produces body content to produce a sub-instruction of a pseudo-instruction.
+   /Varargs: the mnemonic of the instruction to assemble and its arguments.
+   fn(_pseudoinstr_asm_instr, ..., [
+      /DEBUG(_pseudoinstr_asm_instr($@))
+      ~(m5['_assemble_instr(['$1'], ']m5__pseudoinstr_args(m5_comma_shift($@))[')'])
+   ])
+
    /For m5_pseudoinstr, turn the actual-instruction argument list into <args> for m5_asm(<instr>, <args>).
-   /E.g.: m5_pseudoinstr_args([''], #1, #2, 0) => ['$1'],['$2'],['0']
+   /E.g.: m5_pseudoinstr_args([''], OP, #1, #2, 0) => ['OP'], ['$1'],['$2'],['0']
    fn(_pseudoinstr_args,
       comma: ['separator; [''], and [','] thereafter'],
       ...: ['actual-instruction args from _pseudoinstr'],
    {
       ~comma
-      var_regex(['$1'], ['^\(.*\)#\([0-9]\)\(.*\)'], (pre, num, post))
-      ~if_so([
+      ~if_regex(['$1'], ['^\(.*\)#\([0-9]\)\(.*\)'], (pre, num, post), [
          /"#" arg
          ~(m5_pre['$']m5_num\m5_post)
-      ])
-      ~else([
+      ], [
          /Use the arg literally.
          ~(['$1'])
       ])
       ~if($# > 1, [
-         ~_pseudoinstr_args([','], m5_shift($@))
+         ~_pseudoinstr_args(['[',']'], m5_shift($@))
       ])
    })
+   
+   /Like _pseudoinstr, but, for those that expand to multiple instructions, in which case, we must provide
+   /the extension information for conditional definition.
+   fn(_exp_pseudoinstr, [1]Width, [2]Ext, ..., {
+      if_eq(m5_instr_supported(dummy, $@), 1, [
+         _pseudoinstr(m5_shift(m5_shift($@)))
+      ])
+   })
+   
+   /Choose which expansion definition to use for a pseudoinstruction.
+   /Similar arguments to _exp_pseudoinstr, but providing a code block rather than instruction list.
+   /Each alternative can be defined using _exp_pseudoinstr(<MNEMONIC>__#, ...), and the provided Code
+   /returns the number of the version to call.
+   fn(_choose_exp_pseudoinstr, [1]WordWidth, [2]Ext, Mnemonic, NumArgs, Code, [
+      if_eq(m5_instr_supported(dummy, $@), 1, [
+         fn(['_pseudoinstr_']m5_Mnemonic['_']m5_NumArgs, ^Mnemonic, ^NumArgs, ..., [
+            verify_num_args(m5_Mnemonic, m5_NumArgs, m5_fn_arg_cnt())
+            ~call(['_pseudoinstr_']m5_Mnemonic['__']m5_eval(']m5_Code[')['_']m5_NumArgs\m5_comma_fn_args())
+         ])
+      ])
+   ])
 
 
    /=========
@@ -1036,13 +1164,6 @@
    /--------
    /Assemble
    /--------
-   
-   /Labels have been seen such as "foo(int, int)".
-   /Remove (, ) chars from label... mmmm, seems to be okay to leave them in.
-   fn(clean_label, Label, {
-      /~translit(m5_Label, ['.(, )'], ['FIXXX'])
-      ~Label
-   })
             
    /Assemble a real instruction (not a pseudoinstruction).
    fn(assemble_instr, mnemonic, fields, {
@@ -1051,6 +1172,7 @@
       /DEBUG(['Found instruction=: ']m5_mnemonic[''](m5_fields))
       /Parse format based on instruction characteristics.
 
+      if_var_def(['op5_of_instr_']m5_mnemonic, [''], ['m5_error(['Unknown instruction: ']m5_mnemonic)'])
       var(op5, m5_get(['op5_of_instr_']m5_mnemonic))
       var(is_store, m5_eq(m5_op5, m5_op5_named_STORE) ||
                     m5_eq(m5_op5, m5_op5_named_STORE_FP))
@@ -1085,28 +1207,15 @@
       ~else([
          /DEBUG(['Typical instruction: ']m5_mnemonic[''](m5_fields))
 
-         /Some instructions have optional arguments.
-         case(mnemonic, JAL, [
-            if(m5_nargs(m5_eval(m5_fields)) == 1, [
-               set(fields, ['ra, ']m5_fields)
-            ])
-         ], JALR, [
-            if(m5_nargs(m5_eval(m5_fields)) == 1, [
-               set(fields, ['ra, ']m5_fields[', 0'])
-            ])
-         ], FENCE, [
-            if_eq(m5_fields, [''], [
-               set(fields, ['iorw, iorw'])
-            ])
-         ])
-
          /Format, any number of comma-separated fields: e.g. ADDI t0, t2, 1
          var(comma_fields, m5_if_neq(m5_fields, [''], ['[', ']'])m5_fields)
-         var_regex(m5_comma_fields, ['^\(,\s*\.?[-0-9a-zA-Z_]+\(([-0-9a-zA-Z_, ]*)\)?\)*$'], (dummy1, dummy2))
+         var_regex(m5_comma_fields, ['^\(,\s*\.?[-0-9a-zA-Z_%]+\(([-0-9a-zA-Z_, ()]*)\)?\)*$'], (dummy1, dummy2))
          ~if_so([
             ~asm(m5_mnemonic\m5_eval(m5_comma_fields))
          ])
-         else(['m5_bad()'])
+         else([
+            bad()
+         ])
       ])
       ~nl
    })
@@ -1138,13 +1247,11 @@
          /Convert given mnemonic to internal mnemonic, e.g. sext.b -> SEXT_B
          set(mnemonic, m5_translit(m5_uppercase(m5_mnemonic), ['.'], ['_']))
 
-         if_def(['_expanding_pseudoinstr_']m5_mnemonic, [
-            /Pseudoinstruction that expands to multiple instructions.
-            error(['This pseudoinstruction is not yet supported.'])
-         ])
-         ~else_if_def(['_pseudoinstr_']m5_mnemonic, [
-            /Simple pseudoinstructions.
-            ~call(['_pseudoinstr_']m5_mnemonic\m5_if_eq(m5_fields, [''], [''], [',m5_eval(m5_fields)']))
+         var(num_fields, m5_if_eq(m5_fields, [''], 0, ['m5_nargs(m5_eval(m5_fields))']))
+         var(fn_name, ['_pseudoinstr_']m5_mnemonic['_']m5_num_fields)
+         ~if_def(m5_fn_name, [
+            /Pseudoinstructions.
+            ~call(m5_fn_name\m5_if_eq(m5_fields, [''], [''], [',m5_eval(m5_fields)']))
          ])
          ~else([
             /Instruction (not a pseudoinstruction)
@@ -1157,7 +1264,7 @@
          /Label
          /
 
-         define_label(m5_clean_label(m5_label), m5_NUM_INSTRS)
+         define_label(m5_label, m5_NUM_INSTRS)
 
       }, ['^\s+\.\(\w+\)\s+\(.*\)\(.*\)$'], (directive, fields), {
 
