@@ -955,8 +955,8 @@
       /CALL/TAIL currently support near call/tail only. Proper support requires a distance check and alternate expansions.
       /This is circularly dependent upon knowing label addresses. Short of a multi-pass implementation, we could support
       /long-calling with a mode.
-      _pseudoinstr(CALL, 1, ['JALR, ra, #1'])
-      _pseudoinstr(TAIL, 1, ['JALR, zero, #1'])
+      _pseudoinstr(CALL, 1, ['JAL, ra, #1'])
+      _pseudoinstr(TAIL, 1, ['JAL, zero, #1'])
       /Instructions with optional fields.
       _pseudoinstr(JAL, 1, ['JAL, ra, #1'])
       _pseudoinstr(JALR, 1, ['JALR, ra, #1, 0'])
