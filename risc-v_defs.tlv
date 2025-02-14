@@ -410,9 +410,7 @@
   ])
   /label_to_addr(<label>)
   macro(label_to_addr, ['m5_if_var_def(['label_$1_addr'], ['m5_calc(m5_get(label_$1_addr) * 4)'], ['m5_error(['No assembler label "']$1['".'])0'])'])
-  /-/label_to_rel_addr(<label>, <NUM_INSTRS>)
-  /-macro(label_to_rel_addr, ['m5_calc(m5_label_to_addr(['$1']) - (['$2'] * 4)'])
-     
+
   /m5_asm_target(width, target): Given a branch/jump target expression (and, for checking, the max width for the signed binary immediate
   /   value for the instruction) outputs an expression that, once all labels are defined, evaluates to the offset as a string of "0"s and "1"s.
   universal_var(pcrel_hi_label, ['NO_PCREL_HI'])  /// Symbol used for most recent %pcrel_hi label until %pcrel_lo, or ['NO_PCREL_HI'].
@@ -1209,7 +1207,7 @@
 
          /Format, any number of comma-separated fields: e.g. ADDI t0, t2, 1
          var(comma_fields, m5_if_neq(m5_fields, [''], ['[', ']'])m5_fields)
-         var_regex(m5_comma_fields, ['^\(,\s*\.?[-0-9a-zA-Z_%]+\(([-0-9a-zA-Z_, ()]*)\)?\)*$'], (dummy1, dummy2))
+         var_regex(m5_comma_fields, ['^\(,\s*\.?[-0-9a-zA-Z_%]+\((\.?[-0-9a-zA-Z_, ()]*)\)?\)*$'], (dummy1, dummy2))
          ~if_so([
             ~asm(m5_mnemonic\m5_eval(m5_comma_fields))
          ])
