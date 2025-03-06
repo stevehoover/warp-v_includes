@@ -963,7 +963,11 @@
       /Multiple-instruction pseudoinstruction expansions.
       /Some depend on instruction fields and/or supported extensions. These are defined with a "__#" suffix and _choose_ext_pseudoinstr.
       _pseudoinstr(LI__1, 2, ['ADDI, #1, zero, #2']) /// For 12-bit (signed) values.
-      _exp_pseudoinstr(32, I, LI__2, 2, ['LUI, #1, ['m5_calc(#2 >> 12)']'],
+      /Pseudoinstr arguments like #2 can only be used once, and LI__2 needs to use it in two places,
+      /so we put the expression in a function.
+      /The function extracts the upper bits, compensating for undesired sign extension on the lower bits.
+      fn(LI__2__arg2, Arg2, ['m5_calc((m5_Arg2 >> 12) + ((m5_Arg2 & 0x800) != 0))'])
+      _exp_pseudoinstr(32, I, LI__2, 2, ['LUI, #1, ['m5_LI__2__arg2(#2)']'],
                                         ['ADDI, #1, #1, ['m5_calc(#2 & 0xFFF)']'])  /// For > 12-bit (non-label) values.
       _choose_exp_pseudoinstr(32, I, LI, 2, [
          var(arg2, m5_fn_arg(2))
