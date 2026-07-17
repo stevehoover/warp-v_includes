@@ -971,7 +971,7 @@
                                         ['ADDI, #1, #1, ['m5_calc(#2 & 0xFFF)']'])  /// For > 12-bit (non-label) values.
       _choose_exp_pseudoinstr(32, I, LI, 2, [
          var(arg2, m5_fn_arg(2))
-         ~if_regex(m5_fn_arg(2), ['^-?\(0x\|0b\|\)[0-9A-Fa-f]+$'], (base), [
+         ~if_regex(m5_arg2, ['^-?\(0x\|0b\|\)[0-9A-Fa-f]+$'], (base), [
             var(val, m5_calc(m5_arg2))
             ~if(m5_val >= 2**11 || m5_val < -(2**11), 2, 1)
          ], 2)
@@ -1290,11 +1290,32 @@
    
    /Assemble a block of assembly code.
    /The first line defines the indentation of the code, and indentation is removed before processing.
-   fn(assemble, code, {
+   /An optional 2nd arg opts out of the unprocessed-assembly VIZ column (legacy 2-column Instr. Memory).
+   fn(assemble, code, ?no_viz, {
       /DEBUG(Assembling code: m5_code)
+      /Show the unprocessed-asm VIZ column by default; the optional 2nd arg opts out (legacy 2-col).
+      universal_var(VIZ_ASM_COLS, m5_if_null(no_viz, 1, 0))
       var(assemble__cnt, 0)
+      var(assemble__maxlen, 0)
+      var(assemble__line_first_instr, 0)
       ~for_each_line(m5_code, [
+         /Capture the raw (dedented) asm line for the unprocessed-asm VIZ column.
+         universal_var(['instr_asm_line']m5_assemble__cnt, m5_Line)
+         /Track the widest line (chars) for VIZ column sizing.
+         if(m5_calc(m5_length(m5_Line) > m5_assemble__maxlen), [
+            set(assemble__maxlen, m5_length(m5_Line))
+         ])
+         /Remember the first instruction index this source line will produce.
+         set(assemble__line_first_instr, m5_NUM_INSTRS)
          ~assemble_line(m5_assemble__cnt, m5_Line)
+         /Map each instruction produced by this source line back to its raw line index (for VIZ highlighting).
+         repeat(m5_calc(m5_NUM_INSTRS - m5_assemble__line_first_instr), [
+            universal_var(['instr_src_line']m5_calc(m5_assemble__line_first_instr + m5_LoopCnt), m5_assemble__cnt)
+         ])
          increment(assemble__cnt)
       ])
+      /Total number of raw asm lines captured (for VIZ).
+      universal_var(NUM_ASM_LINES, m5_assemble__cnt)
+      /Widest raw asm line, in chars (for VIZ column sizing).
+      universal_var(ASM_MAX_COLS, m5_assemble__maxlen)
    })
