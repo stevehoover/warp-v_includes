@@ -1324,9 +1324,7 @@
       var(assemble__line_first_instr, 0)
       /Optional crt0 preamble (when an Entry symbol is given). Assembled first so WARP-V's `reset:` label
       /starts execution here: it inits sp, calls the entry, and maps the entry's int return (a0) to the
-      /pass/fail convention (0 => pass, non-0 => fail). The preamble is built as one comma-safe var -- each
-      /asm line's commas are protected inside a block-quote literal, and the comma-free m5_Entry / sp-init
-      /value are concatenated between them -- so it iterates via for_each_line just like the user program.
+      /pass/fail convention (0 => pass, non-0 => fail). The preamble is built as one comma-safe var.
       /ENTRY_PREAMBLE_INSTRS records how many instructions precede the user program so the source-code VIZ
       /column (indexed per user instruction) can subtract it to realign highlighting.
       /TODO: the stack top (top of DMEM) is provisional; revisit for real C programs.
