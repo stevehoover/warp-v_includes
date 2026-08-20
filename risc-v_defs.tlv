@@ -1288,31 +1288,57 @@
       })
    })
    
+   /Assemble a single raw asm line, shared by the crt0-preamble and user-program passes of m5_assemble.
+   /Captures the raw (dedented) line for the unprocessed-asm VIZ column, tracks the widest line, assembles
+   /it, and maps each instruction it produces back to its raw line index (for VIZ highlighting). Defined as
+   /a macro (not a fn) so it inlines into the for_each_line body, where m5_Line and the running counters
+   /m5_assemble__cnt (raw line index) / m5_assemble__maxlen are in scope.
+   macro(assemble_capture_line, {
+      /Capture the raw (dedented) asm line for the unprocessed-asm VIZ column.
+      universal_var(['instr_asm_line']m5_assemble__cnt, m5_Line)
+      /Track the widest line (chars) for VIZ column sizing.
+      if(m5_calc(m5_length(m5_Line) > m5_assemble__maxlen), [
+         set(assemble__maxlen, m5_length(m5_Line))
+      ])
+      /Remember the first instruction index this source line will produce.
+      set(assemble__line_first_instr, m5_NUM_INSTRS)
+      ~assemble_line(m5_assemble__cnt, m5_Line)
+      /Map each instruction produced by this source line back to its raw line index (for VIZ highlighting).
+      repeat(m5_calc(m5_NUM_INSTRS - m5_assemble__line_first_instr), [
+         universal_var(['instr_src_line']m5_calc(m5_assemble__line_first_instr + m5_LoopCnt), m5_assemble__cnt)
+      ])
+      increment(assemble__cnt)
+   })
+
    /Assemble a block of assembly code.
    /The first line defines the indentation of the code, and indentation is removed before processing.
-   /An optional 2nd arg opts out of the unprocessed-assembly VIZ column (legacy 2-column Instr. Memory).
-   fn(assemble, code, ?no_viz, {
+   /An optional 2nd arg (Entry) names an entry symbol (e.g. `main`) to invoke via a prepended crt0
+   /preamble; when given, execution starts in crt0 rather than at the user's first line.
+   /An optional 3rd arg opts out of the unprocessed-assembly VIZ column (legacy 2-column Instr. Memory).
+   fn(assemble, code, ?Entry, ?no_viz, {
       /DEBUG(Assembling code: m5_code)
-      /Show the unprocessed-asm VIZ column by default; the optional 2nd arg opts out (legacy 2-col).
+      /Show the unprocessed-asm VIZ column by default; the optional no_viz arg opts out (legacy 2-col).
       universal_var(VIZ_ASM_COLS, m5_if_null(no_viz, 1, 0))
       var(assemble__cnt, 0)
       var(assemble__maxlen, 0)
       var(assemble__line_first_instr, 0)
+      /Optional crt0 preamble (when an Entry symbol is given). Assembled first so WARP-V's `reset:` label
+      /starts execution here: it inits sp, calls the entry, and maps the entry's int return (a0) to the
+      /pass/fail convention (0 => pass, non-0 => fail). The preamble is built as one comma-safe var -- each
+      /asm line's commas are protected inside a block-quote literal, and the comma-free m5_Entry / sp-init
+      /value are concatenated between them -- so it iterates via for_each_line just like the user program.
+      /ENTRY_PREAMBLE_INSTRS records how many instructions precede the user program so the source-code VIZ
+      /column (indexed per user instruction) can subtract it to realign highlighting.
+      /TODO: the stack top (top of DMEM) is provisional; revisit for real C programs.
+      ~if_null(Entry, [], [
+         var(crt0, ['reset:']m5_nl['   li sp, ']m5_calc(m5_DMEM_SIZE * 4)m5_nl['   call ']m5_Entry['']m5_nl['   beqz a0, pass']m5_nl['fail:']m5_nl['   j fail']m5_nl['pass:']m5_nl['   j pass'])
+         ~for_each_line(m5_crt0, [
+            ~assemble_capture_line()
+         ])
+      ])
+      universal_var(ENTRY_PREAMBLE_INSTRS, m5_NUM_INSTRS)
       ~for_each_line(m5_code, [
-         /Capture the raw (dedented) asm line for the unprocessed-asm VIZ column.
-         universal_var(['instr_asm_line']m5_assemble__cnt, m5_Line)
-         /Track the widest line (chars) for VIZ column sizing.
-         if(m5_calc(m5_length(m5_Line) > m5_assemble__maxlen), [
-            set(assemble__maxlen, m5_length(m5_Line))
-         ])
-         /Remember the first instruction index this source line will produce.
-         set(assemble__line_first_instr, m5_NUM_INSTRS)
-         ~assemble_line(m5_assemble__cnt, m5_Line)
-         /Map each instruction produced by this source line back to its raw line index (for VIZ highlighting).
-         repeat(m5_calc(m5_NUM_INSTRS - m5_assemble__line_first_instr), [
-            universal_var(['instr_src_line']m5_calc(m5_assemble__line_first_instr + m5_LoopCnt), m5_assemble__cnt)
-         ])
-         increment(assemble__cnt)
+         ~assemble_capture_line()
       ])
       /Total number of raw asm lines captured (for VIZ).
       universal_var(NUM_ASM_LINES, m5_assemble__cnt)
