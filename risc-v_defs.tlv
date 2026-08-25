@@ -442,7 +442,7 @@
            set(pcrel_hi_label, ['NO_PCREL_HI'])
         ], ['m5_error(['Unrecognized assembly % macro: %']m5_func.)']))
         ~out
-     ], ['^:?\(\.?[a-zA-Z][a-zA-Z_0-9(, )]*\|[0-9]+[fb]\)$'], (label), [
+     ], ['^:?\(\.?[a-zA-Z_][a-zA-Z_0-9(, )]*\|[0-9]+[fb]\)$'], (label), [
         /Label-based target, including:
         /  - Legacy M4-style label references (starting w/ ":"), or
         /  - Named label target.
@@ -1315,7 +1315,7 @@
    /An optional 2nd arg (Entry) names an entry symbol (e.g. `main`) to invoke via a prepended crt0
    /preamble; when given, execution starts in crt0 rather than at the user's first line.
    /An optional 3rd arg opts out of the unprocessed-assembly VIZ column (legacy 2-column Instr. Memory).
-   fn(assemble, code, ?Entry, ?no_viz, {
+   fn(assemble, code, ?Entry, ?Runtime, ?no_viz, {
       /DEBUG(Assembling code: m5_code)
       /Show the unprocessed-asm VIZ column by default; the optional no_viz arg opts out (legacy 2-col).
       universal_var(VIZ_ASM_COLS, m5_if_null(no_viz, 1, 0))
@@ -1328,10 +1328,30 @@
       /ENTRY_PREAMBLE_INSTRS records how many instructions precede the user program so the source-code VIZ
       /column (indexed per user instruction) can subtract it to realign highlighting.
       /TODO: the stack top (top of DMEM) is provisional; revisit for real C programs.
-      ~if_null(Entry, [], [
+      ~if_null(Entry, [''], [
          var(crt0, ['reset:']m5_nl['   li sp, ']m5_calc(m5_DMEM_SIZE * 4)m5_nl['   call ']m5_Entry['']m5_nl['   beqz a0, pass']m5_nl['fail:']m5_nl['   j fail']m5_nl['pass:']m5_nl['   j pass'])
          ~for_each_line(m5_crt0, [
             ~assemble_capture_line()
+         ])
+         /Optional runtime shim (when a Runtime is given). The producer tags the assembly with the
+         /language runtime that produced it; m5_assemble injects the matching runtime_shim_<Runtime>
+         /var from the registry below. The shim stubs the runtime entry symbols the compiler emitted
+         /calls to, mapping them to the pass/fail convention so a bare-metal program can run.
+         ~if_null(Runtime, [''], [
+            var(runtime_shim_fortran, ['
+               _gfortran_set_args:
+                  ret
+               _gfortran_set_options:
+                  ret
+               _gfortran_stop_numeric:
+                  beqz a0, pass
+                  j fail
+               _gfortran_error_stop_numeric:
+                  j fail
+            '])
+            ~for_each_line(m5_get(['runtime_shim_']m5_Runtime), [
+               ~assemble_capture_line()
+            ])
          ])
       ])
       universal_var(ENTRY_PREAMBLE_INSTRS, m5_NUM_INSTRS)
