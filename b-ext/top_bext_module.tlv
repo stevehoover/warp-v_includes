@@ -1,39 +1,42 @@
-\m4_TLV_version 1d: tl-x.org
+\m5_TLV_version 1d: tl-x.org
+\m5
+   use(m5-1.0)
+\SV
    
 // 1. CLZ (count leading zeros)
-// e.g. m4+clz_final(|pipe, /clz_stage, 32, 0, 1, $input, $output)
+// e.g. m5+clz_final(|pipe, /clz_stage, 32, 0, 1, $input, $output)
 \TLV clz_final(/_top, /_clz_stage, #_varbits, #_stage, #_stageinc, $_data_value, $_clz_output)
-   m4_pushdef(['m4_clz_stage'], m4_strip_prefix(/_clz_stage))
-   m4_ifelse_block(m4_eval(#_stage == 0 ), 1, ['
+   m5_push_var(clz_stage, m5_strip_prefix(/_clz_stage))
+   m5_if_eq_block(m5_calc(#_stage == 0 ), 1, ['
    /_clz_stage['']#_stageinc[''][((#_varbits / 2) - 1) : 0]
-      $clz_stage['']#_stageinc[['']#_stageinc : 0] = (/_top$_data_value[((2*(#m4_clz_stage['']#_stageinc)) + 1) : (2*(#m4_clz_stage['']#_stageinc))] == 2'b00) ? 2'b10 :
-                          (/_top$_data_value[((2*(#m4_clz_stage['']#_stageinc)) + 1) : (2*(#m4_clz_stage['']#_stageinc))] == 2'b01) ? 2'b01 : 2'b00;
-   m4+clz_final(/_top, /_clz_stage, m4_eval(#_varbits / 2), m4_eval(#_stage + 1),m4_eval(#_stageinc + 1), $clz_stage['']#_stageinc, $_clz_output)
+      $clz_stage['']#_stageinc[['']#_stageinc : 0] = (/_top$_data_value[((2*(#m5_clz_stage['']#_stageinc)) + 1) : (2*(#m5_clz_stage['']#_stageinc))] == 2'b00) ? 2'b10 :
+                          (/_top$_data_value[((2*(#m5_clz_stage['']#_stageinc)) + 1) : (2*(#m5_clz_stage['']#_stageinc))] == 2'b01) ? 2'b01 : 2'b00;
+   m5+clz_final(/_top, /_clz_stage, m5_calc(#_varbits / 2), m5_calc(#_stage + 1),m5_calc(#_stageinc + 1), $clz_stage['']#_stageinc, $_clz_output)
    '],['
    /_clz_stage['']#_stageinc[''][((#_varbits / 2) - 1) : 0]
-      $clz_stage['']#_stageinc[['']#_stageinc : 0] = (/_top/_clz_stage['']#_stage[(2*(#m4_clz_stage['']#_stageinc)) + 1]$_data_value[#_stage] == 1'b1  && /_top/_clz_stage['']#_stage[2*(#m4_clz_stage['']#_stageinc)]$_data_value[#_stage] == 1'b1 ) ? {1'b1,#_stageinc'b0} :
-                           (/_top/_clz_stage['']#_stage[(2*(#m4_clz_stage['']#_stageinc)) + 1]$_data_value[#_stage] == 1'b0) ? {1'b0,/_top/_clz_stage['']#_stage[(2*(#m4_clz_stage['']#_stageinc)) + 1]$_data_value[#_stage : 0]} : {2'b01,/_top/_clz_stage['']#_stage[(2*(#m4_clz_stage['']#_stageinc)) ]$_data_value[#_stage - 1 : 0]};
-   m4_ifelse_block(m4_eval(#_varbits > 2), 1, ['
-   m4+clz_final(/_top, /_clz_stage, m4_eval(#_varbits / 2), m4_eval(#_stage + 1),m4_eval(#_stageinc + 1), $clz_stage['']#_stageinc, $_clz_output)
+      $clz_stage['']#_stageinc[['']#_stageinc : 0] = (/_top/_clz_stage['']#_stage[(2*(#m5_clz_stage['']#_stageinc)) + 1]$_data_value[#_stage] == 1'b1  && /_top/_clz_stage['']#_stage[2*(#m5_clz_stage['']#_stageinc)]$_data_value[#_stage] == 1'b1 ) ? {1'b1,#_stageinc'b0} :
+                           (/_top/_clz_stage['']#_stage[(2*(#m5_clz_stage['']#_stageinc)) + 1]$_data_value[#_stage] == 1'b0) ? {1'b0,/_top/_clz_stage['']#_stage[(2*(#m5_clz_stage['']#_stageinc)) + 1]$_data_value[#_stage : 0]} : {2'b01,/_top/_clz_stage['']#_stage[(2*(#m5_clz_stage['']#_stageinc)) ]$_data_value[#_stage - 1 : 0]};
+   m5_if_eq_block(m5_calc(#_varbits > 2), 1, ['
+   m5+clz_final(/_top, /_clz_stage, m5_calc(#_varbits / 2), m5_calc(#_stage + 1),m5_calc(#_stageinc + 1), $clz_stage['']#_stageinc, $_clz_output)
    '], ['
    $_clz_output[['']#_stageinc : 0] = /_clz_stage['']#_stageinc[0]$clz_stage['']#_stageinc[['']#_stageinc : 0];
    '])
    '])
-   m4_popdef(['m4_clz_stage'])
+   m5_pop(clz_stage)
    
 // 2. CTZ (count trailing zeros)
-// e.g. m4+ctz_final(|pipe, /ctz_stage, /reverse, 32, 0, 1, $input, $output)
+// e.g. m5+ctz_final(|pipe, /ctz_stage, /reverse, 32, 0, 1, $input, $output)
 \TLV ctz_final(/_top, /_ctz_stage, /_reverse, #_varbits, #_stage, #_stageinc, $_data_value, $_ctz_output) 
-   m4_pushdef(['m4_ctz_stage'], m4_strip_prefix(/_ctz_stage))
+   m5_push_var(ctz_stage, m5_strip_prefix(/_ctz_stage))
    /_ctz_stage['']0[#_varbits - 1 : 0]
-      $reg_val = /_top$_data_value[31 - #m4_ctz_stage['']0];
+      $reg_val = /_top$_data_value[31 - #m5_ctz_stage['']0];
    /_reverse
       $reverse_ctz[#_varbits - 1 : 0] = /_top/_ctz_stage['']0[*]$reg_val;
-   m4+clz_final(/_top,/_ctz_stage,#_varbits,#_stage,#_stageinc,/_reverse$reverse_ctz, $_ctz_output)
-   m4_popdef(['m4_ctz_stage'])
+   m5+clz_final(/_top,/_ctz_stage,#_varbits,#_stage,#_stageinc,/_reverse$reverse_ctz, $_ctz_output)
+   m5_pop(ctz_stage)
    
 // 3. popcnt (count no. of '1' in the input)
-// e.g. m4+popcnt(|pipe, /pop_stage, $input, $output, 32)
+// e.g. m5+popcnt(|pipe, /pop_stage, $input, $output, 32)
 \TLV redux_synth($_redux_sig,/_hier,#_MAX,#_MIN,$_sig,$_init_expr ,_op)
    \always_comb
       $['']$_redux_sig = $_init_expr ;
@@ -41,11 +44,11 @@
          $_redux_sig = $_redux_sig _op /_hier[i]$_sig;
       end
 \TLV popcnt(/_top, /_pop_bit, $_input, $_output, #_XLEN)
-   m4_pushdef(['m4_pop_bit'], m4_strip_prefix(/_pop_bit))
+   m5_push_var(pop_bit, m5_strip_prefix(/_pop_bit))
    /_pop_bit[['']#_XLEN -1 : 0]
-      $pop_temp[#_XLEN -1 : 0] = { {(#_XLEN - 1){1'b0}} ,/_top$_input[#m4_pop_bit]};
-   m4+redux_synth($_output[\$clog2(#_XLEN) : 0], /_pop_bit, m4_eval(#_XLEN - 1) , 0, $pop_temp, '0, +)
-   m4_popdef(['m4_pop_bit'])
+      $pop_temp[#_XLEN -1 : 0] = { {(#_XLEN - 1){1'b0}} ,/_top$_input[#m5_pop_bit]};
+   m5+redux_synth($_output[\$clog2(#_XLEN) : 0], /_pop_bit, m5_calc(#_XLEN - 1) , 0, $pop_temp, '0, +)
+   m5_pop(pop_bit)
    
 // 4. Logic-with-negate instructions (andn, orn, xnor)
 // RS1 = input1  and RS2 = input2  and RD=output
@@ -69,7 +72,7 @@
 // 9. The "packh" instruction packs the LSB bytes of rs1 and rs2 into the 16 LSB
 // bits of rd, zero extending the rest of rd.
 \TLV packh($_input1,$_input2,$_output,#_XLEN)
-   $_output[#_XLEN - 1 : 0] = { {(m4_eval(#_XLEN / 2) - 1){1'b0}} ,$_input2[(#_XLEN / 4) - 1 : 0], $_input1[(#_XLEN / 4) - 1 : 0]};
+   $_output[#_XLEN - 1 : 0] = { {(m5_calc(#_XLEN / 2) - 1){1'b0}} ,$_input2[(#_XLEN / 4) - 1 : 0], $_input1[(#_XLEN / 4) - 1 : 0]};
    
 // 8.) Min/max instructions (min, max, minu, maxu)
 // Returns max value of the two registers either signed or unsigned(u) operation.
@@ -136,7 +139,7 @@
    $_output[#_XLEN - 1 : 0] = ~(( ~($_input1) >> ($_imm[#_XLEN - 1 : 0] & (#_XLEN - 1))));
    
 // 26. ROTL (rotate left)
-// e.g. m4+rorl_final(32, 1, $input, $sftamt, $output, 31, 0)
+// e.g. m5+rorl_final(32, 1, $input, $sftamt, $output, 31, 0)
 \TLV rorl_final(#_varbits,#_stage,$_reg_value,$_sft_amt,$_rotl,#_max,#_min)
    \always_comb
       $['']$_rotl['']#_stage[#_max : #_min] = 0;
@@ -146,14 +149,14 @@
               $_reg_value[i] : (i >= 0 && i < (2**(#_stage - 1))) ?
               $_reg_value[(i+((#_max + 1) - (2**(#_stage - 1))))] :
               $_reg_value[(i-(2**(#_stage - 1)))]; end
-   m4_ifelse_block(m4_eval(#_varbits > 2), 1, ['
-   m4+rorl_final(m4_eval(#_varbits / 2), m4_eval(#_stage + 1), $_rotl['']#_stage, $_sft_amt, $_rotl, #_max, #_min)
+   m5_if_eq_block(m5_calc(#_varbits > 2), 1, ['
+   m5+rorl_final(m5_calc(#_varbits / 2), m5_calc(#_stage + 1), $_rotl['']#_stage, $_sft_amt, $_rotl, #_max, #_min)
    '], ['
    $_rotl[#_max : #_min] = $_rotl['']#_stage[#_max : #_min];
    '])
    
 // 27. ROTR (rotate right)
-// e.g. m4+rorr_final(32, 1, $input, $sftamt, $output, 31, 0)
+// e.g. m5+rorr_final(32, 1, $input, $sftamt, $output, 31, 0)
 \TLV rorr_final(#_varbits,#_stage,$_reg_value,$_sft_amt,$_rotr,#_max,#_min) 
    \always_comb
       $['']$_rotr['']#_stage[#_max : #_min] = 0;
@@ -163,34 +166,34 @@
               $_reg_value[i] : (i <= (#_max) && i > (#_max - (2**(#_stage - 1)))) ?
               $_reg_value[(i-((#_max + 1) - (2**(#_stage - 1))))] :
               $_reg_value[(i+(2**(#_stage - 1)))]; end
-   m4_ifelse_block(m4_eval(#_varbits > 2), 1, ['
-   m4+rorr_final(m4_eval(#_varbits / 2), m4_eval(#_stage + 1), $_rotr['']#_stage, $_sft_amt, $_rotr, #_max, #_min)
+   m5_if_eq_block(m5_calc(#_varbits > 2), 1, ['
+   m5+rorr_final(m5_calc(#_varbits / 2), m5_calc(#_stage + 1), $_rotr['']#_stage, $_sft_amt, $_rotr, #_max, #_min)
    '], ['
    $_rotr[#_max : #_min] = $_rotr['']#_stage[#_max : #_min];
    '])
    
 // 28. BREV (bit-wise reversal generalized)
-// e.g. m4+brev_final(|pipe, /brev_stage, 32, 32, 0, 1, $input, $sft_amt, $output)
+// e.g. m5+brev_final(|pipe, /brev_stage, 32, 32, 0, 1, $input, $sft_amt, $output)
 \TLV brev_final(/_top,/_brev_stage,#_constbits,#_varbits,#_stage,#_stageinc,$_data_value,$sft_amt,$resultq) 
-   m4_pushdef(['m4_brev_stage'], m4_strip_prefix(/_brev_stage))
-   m4_ifelse_block(m4_eval(#_stage == 0 ), 1, ['
+   m5_push_var(brev_stage, m5_strip_prefix(/_brev_stage))
+   m5_if_eq_block(m5_calc(#_stage == 0 ), 1, ['
    /_brev_stage[''][(#_constbits - 1) : 0]
-      $brev_stage_val['']#_stageinc = (/_top$sft_amt[#_stage] == 1'b0)  ? /_top$_data_value[#m4_brev_stage] :
-          ((#m4_brev_stage % (2 ** #_stageinc)) == 0 ) ? /_top$_data_value[(#m4_brev_stage + (2 ** #_stage)) % (2 ** #_stage)] :
-          /_top$_data_value[(#m4_brev_stage % (2 ** #_stageinc)) ];
-   m4+brev_final(/_top,/_brev_stage,#_constbits,m4_eval(#_varbits / 2), m4_eval(#_stage + 1),m4_eval(#_stageinc + 1),$brev_stage_val['']#_stageinc,$sft_amt,$resultq)
+      $brev_stage_val['']#_stageinc = (/_top$sft_amt[#_stage] == 1'b0)  ? /_top$_data_value[#m5_brev_stage] :
+          ((#m5_brev_stage % (2 ** #_stageinc)) == 0 ) ? /_top$_data_value[(#m5_brev_stage + (2 ** #_stage)) % (2 ** #_stage)] :
+          /_top$_data_value[(#m5_brev_stage % (2 ** #_stageinc)) ];
+   m5+brev_final(/_top,/_brev_stage,#_constbits,m5_calc(#_varbits / 2), m5_calc(#_stage + 1),m5_calc(#_stageinc + 1),$brev_stage_val['']#_stageinc,$sft_amt,$resultq)
    '],['
    /_brev_stage[''][(#_constbits - 1) : 0]
-      $brev_stage_val['']#_stageinc = (/_top$sft_amt[#_stage] == 1'b0)  ? /_top/_brev_stage[['']#m4_brev_stage]$_data_value :
-          ( ((['']#m4_brev_stage % (2 ** #_stageinc)) >= 0) && ((['']#m4_brev_stage % (2 ** #_stageinc)) < (2 ** #_stage) )) ? /_top/_brev_stage[(['']#m4_brev_stage + (2 ** #_stage)) % (2 ** #_stage)]$_data_value:
-          /_top/_brev_stage[(['']#m4_brev_stage % (2 ** #_stage))]$_data_value;
-   m4_ifelse_block(m4_eval(#_varbits >= 1), 1, ['
-   m4+brev_final(/_top,/_brev_stage,#_constbits,m4_eval(#_varbits / 2), m4_eval(#_stage + 1),m4_eval(#_stageinc + 1),$brev_stage_val['']#_stageinc,$sft_amt,$resultq)
+      $brev_stage_val['']#_stageinc = (/_top$sft_amt[#_stage] == 1'b0)  ? /_top/_brev_stage[['']#m5_brev_stage]$_data_value :
+          ( ((['']#m5_brev_stage % (2 ** #_stageinc)) >= 0) && ((['']#m5_brev_stage % (2 ** #_stageinc)) < (2 ** #_stage) )) ? /_top/_brev_stage[(['']#m5_brev_stage + (2 ** #_stage)) % (2 ** #_stage)]$_data_value:
+          /_top/_brev_stage[(['']#m5_brev_stage % (2 ** #_stage))]$_data_value;
+   m5_if_eq_block(m5_calc(#_varbits >= 1), 1, ['
+   m5+brev_final(/_top,/_brev_stage,#_constbits,m5_calc(#_varbits / 2), m5_calc(#_stage + 1),m5_calc(#_stageinc + 1),$brev_stage_val['']#_stageinc,$sft_amt,$resultq)
    '], ['
    $resultq[(#_constbits - 1) : 0] = /_brev_stage[*]$brev_stage_val['']#_stageinc;
    '])
    '])
-   m4_popdef(['m4_brev_stage'])
+   m5_pop(brev_stage)
    
 // 29. This marco is inheritated from RISC-V bitmanip draft verilog module.
 // This module contains bext, bdep, gorc, grev, shfl, and unshfl instruction

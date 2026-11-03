@@ -1,4 +1,6 @@
-\m4_TLV_version 1d: tl-x.org
+\m5_TLV_version 1d: tl-x.org
+\m5
+   use(m5-1.0)
 \SV
 /*
 Copyright (c) 2018, Steve Hoover
@@ -55,9 +57,9 @@ m4_sv_include_url(['https://raw.githubusercontent.com/stevehoover/warp-v_include
 /* verilator lint_restore */
 
 \TLV fpu_define(#_expwidth, #_sigwidth, #_intwidth)
-    m4_define(['EXPWIDTH'], #_expwidth)
-    m4_define(['SIGWIDTH'], #_sigwidth)
-    m4_define(['INTWIDTH'], #_intwidth)
+   m5_var(EXPWIDTH, #_expwidth)
+   m5_var(SIGWIDTH, #_sigwidth)
+   m5_var(INTWIDTH, #_intwidth)
 
 
 \TLV fn_to_rec(#_number, #_expwidth, #_sigwidth, $_input, $_output)   
